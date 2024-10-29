@@ -1,9 +1,8 @@
-
 export function test() {
-    return (
-    <div>
-        <h1 className="text-">Test</h1>
-        <p>Test</p>
-    </div>
-    )
-};
+  return (
+    <>
+      <div className="text-2xl">Testmcgee</div>
+      <h1 className="text-center text-sm">Sexytime</h1>
+    </>
+  );
+}
