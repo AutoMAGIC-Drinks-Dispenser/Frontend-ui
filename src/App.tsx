@@ -1,15 +1,15 @@
-import { test } from './components/test'
-import './App.css'
+import "./App.css";
+import "./index.css";
+import { MainMenu } from "./components/main_menu";
 
 function App() {
-
   return (
     <>
-      <div> 
-        {test()}
+      <div>
+        <MainMenu />
       </div>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
