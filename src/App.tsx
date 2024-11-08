@@ -4,11 +4,9 @@ import { MainMenu } from "./components/main_menu";
 
 function App() {
   return (
-    <>
-      <div>
-        <MainMenu />
-      </div>
-    </>
+    <div className="h-screen w-screen overflow-hidden">
+      <MainMenu />
+    </div>
   );
 }
 
