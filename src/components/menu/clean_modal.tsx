@@ -20,6 +20,8 @@ export const CleaningPopupModal: React.FC<TimerPopupProps> = ({
     }
   }, [timeLeft, onClose]);
 
+  const progress = ((duration - timeLeft) / duration) * 100;
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white p-8 rounded-md shadow-lg text-center">
@@ -27,8 +29,14 @@ export const CleaningPopupModal: React.FC<TimerPopupProps> = ({
         <p className="text-gray-700 mb-6">
           Rengøring er i gang, vent venligst...
         </p>
-        <div className="text-xl font-bold text-blue-500">
+        <div className="text-xl font-bold text-blue-500 mb-4">
           Tid tilbage: {timeLeft} sekunder
+        </div>
+        <div className="w-full bg-gray-300 rounded-full h-4">
+          <div
+            className="bg-blue-400 h-4 rounded-full"
+            style={{ width: `${progress}%` }}
+          ></div>
         </div>
       </div>
     </div>
