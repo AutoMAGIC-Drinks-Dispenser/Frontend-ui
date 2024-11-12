@@ -3,7 +3,10 @@ interface PopupProps {
   onStart: () => void;
 }
 
-export const SpejlaegPopupModal: React.FC<PopupProps> = ({ onClose, onStart }) => {
+export const SpejlaegPopupModal: React.FC<PopupProps> = ({
+  onClose,
+  onStart,
+}) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white p-8 rounded-md shadow-lg text-center">
@@ -11,7 +14,7 @@ export const SpejlaegPopupModal: React.FC<PopupProps> = ({ onClose, onStart }) =
         <div className="flex justify-around mt-8">
           <button
             onClick={onStart}
-            className="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-700 focus:outline-none"
+            className="bg-blue-400 text-white px-6 py-2 rounded-md hover:bg-blue-500 focus:outline-none"
           >
             Start
           </button>

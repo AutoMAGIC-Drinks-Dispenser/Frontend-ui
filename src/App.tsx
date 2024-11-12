@@ -4,7 +4,7 @@ import { MainMenu } from "./components/main_menu";
 
 function App() {
   return (
-    <div className="h-screen w-screen overflow-hidden">
+    <div className="h-screen w-screen flex justify-center items-center overflow-hidden">
       <MainMenu />
     </div>
   );
