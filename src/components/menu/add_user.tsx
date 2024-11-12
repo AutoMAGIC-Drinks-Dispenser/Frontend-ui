@@ -18,6 +18,10 @@ export const AddUser: React.FC = () => {
     }
   };
 
+  const handleDeleteUser = (userID: string) => {
+    setUsers(users.filter((user) => user.userID !== userID));
+  };
+
   return (
     <div className="relative">
       <button
@@ -56,8 +60,16 @@ export const AddUser: React.FC = () => {
             <h4 className="text-black">Brugere:</h4>
             <ul className="list-disc list-inside">
               {users.map((user, index) => (
-                <li key={index}>
-                  {user.userID}: {user.username}
+                <li key={index} className="flex justify-between">
+                  <span>
+                    {user.userID}: {user.username}
+                  </span>
+                  <button
+                    className="text-red-500 hover:underline ml-2"
+                    onClick={() => handleDeleteUser(user.userID)}
+                  >
+                    Slet
+                  </button>
                 </li>
               ))}
             </ul>

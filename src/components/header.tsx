@@ -1,5 +1,5 @@
 import React from "react";
-import { ExtraMenu } from "./extra_menu";
+import { ExtraMenu } from "./menu/extra_menu";
 
 export const HeaderComponent: React.FC = () => {
   return (
