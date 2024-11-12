@@ -2,7 +2,7 @@ import React, { useState } from "react";
 
 export const AddUser: React.FC = () => {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
-  const [users, setUsers] = useState<{ userID: string; username: string }[]>(
+  const [users, setUsers] = useState<{ userID: number; username: string }[]>(
     []
   );
   const [newUserID, setNewUserID] = useState("");
@@ -12,13 +12,16 @@ export const AddUser: React.FC = () => {
 
   const handleAddUser = () => {
     if (newUserID && newUsername) {
-      setUsers([...users, { userID: newUserID, username: newUsername }]);
+      setUsers([
+        ...users,
+        { userID: Number(newUserID), username: newUsername },
+      ]);
       setNewUserID("");
       setNewUsername("");
     }
   };
 
-  const handleDeleteUser = (userID: string) => {
+  const handleDeleteUser = (userID: number) => {
     setUsers(users.filter((user) => user.userID !== userID));
   };
 
@@ -62,7 +65,7 @@ export const AddUser: React.FC = () => {
               {users.map((user, index) => (
                 <li key={index} className="flex justify-between">
                   <span>
-                    {user.userID}: {user.username}
+                    {user.userID} {user.username}
                   </span>
                   <button
                     className="text-red-500 hover:underline ml-2"
