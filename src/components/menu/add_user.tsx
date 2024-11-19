@@ -1,30 +1,25 @@
 import React, { useState } from "react";
+import { useUserStore } from "../../store/store";
 
 export const AddUser: React.FC = () => {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [isModalOpen, setModalOpen] = useState(false);
-  const [users, setUsers] = useState<{ userID: number; username: string }[]>(
-    []
-  );
   const [newUserID, setNewUserID] = useState("");
   const [newUsername, setNewUsername] = useState("");
+
+  const users = useUserStore((state) => state.users);
+  const addUser = useUserStore((state) => state.addUser);
+  const deleteUser = useUserStore((state) => state.deleteUser);
 
   const toggleDropdown = () => setDropdownOpen(!isDropdownOpen);
   const toggleModal = () => setModalOpen(!isModalOpen);
 
   const handleAddUser = () => {
     if (newUserID && newUsername) {
-      setUsers([
-        ...users,
-        { userID: Number(newUserID), username: newUsername },
-      ]);
+      addUser({ userID: newUserID, username: newUsername });
       setNewUserID("");
       setNewUsername("");
     }
-  };
-
-  const handleDeleteUser = (userID: number) => {
-    setUsers(users.filter((user) => user.userID !== userID));
   };
 
   return (
@@ -83,7 +78,7 @@ export const AddUser: React.FC = () => {
                   </span>
                   <button
                     className="text-red-500 hover:underline ml-2"
-                    onClick={() => handleDeleteUser(user.userID)}
+                    onClick={() => deleteUser(user.userID)}
                   >
                     Slet
                   </button>

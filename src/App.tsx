@@ -3,7 +3,11 @@ import "./index.css";
 import { MainMenu } from "./components/main_menu";
 
 function App() {
-  return <MainMenu />;
+  return (
+    <div>
+      <MainMenu />
+    </div>
+  );
 }
 
 export default App;
