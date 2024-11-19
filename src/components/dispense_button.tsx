@@ -22,7 +22,7 @@ export const SpejlaegButtonComponent: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center py-10">
+    <div className="flex items-center justify-center py-20">
       <div className="flex space-x-12">
         <button
           onClick={handleSingleButtonClick}
