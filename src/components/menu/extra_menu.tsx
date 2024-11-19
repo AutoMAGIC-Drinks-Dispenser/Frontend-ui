@@ -4,7 +4,7 @@ import { RefillButton } from "./refill_modal";
 
 export const ExtraMenu: React.FC = () => {
   return (
-    <div className="bg-stone-200 text-center py-4 w-full flex justify-center space-x-20">
+    <div className="bg-stone-200 text-center py-4 w-screen flex justify-center space-x-20">
       <AddUser />
       <RefillButton />
       <CleaningButton />
