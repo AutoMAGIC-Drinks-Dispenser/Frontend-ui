@@ -33,7 +33,7 @@ export const AddUser: React.FC = () => {
         className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32"
         onClick={toggleDropdown}
       >
-        Bruger:{" "}
+        Bruger: <br />
         {users.length > 0
           ? `${users[0].userID} ${users[0].username}`
           : "Ingen brugere"}
