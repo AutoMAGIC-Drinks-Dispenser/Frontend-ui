@@ -2,6 +2,7 @@ import React, { useState } from "react";
 
 export const AddUser: React.FC = () => {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
+  const [isModalOpen, setModalOpen] = useState(false);
   const [users, setUsers] = useState<{ userID: number; username: string }[]>(
     []
   );
@@ -9,6 +10,7 @@ export const AddUser: React.FC = () => {
   const [newUsername, setNewUsername] = useState("");
 
   const toggleDropdown = () => setDropdownOpen(!isDropdownOpen);
+  const toggleModal = () => setModalOpen(!isModalOpen);
 
   const handleAddUser = () => {
     if (newUserID && newUsername) {
@@ -37,7 +39,7 @@ export const AddUser: React.FC = () => {
           : "Ingen brugere"}
       </button>
       {isDropdownOpen && (
-        <div className="absolute bg-white border rounded-md shadow-lg mt-2 p-4 w-56">
+        <div className="absolute bg-white border rounded-md shadow-lg mt-2 p-4 w-52">
           <h3 className="text-black mb-2">Tilføj ny bruger</h3>
           <input
             type="text"
@@ -60,7 +62,19 @@ export const AddUser: React.FC = () => {
             Tilføj bruger
           </button>
           <div className="mt-4">
-            <h4 className="text-black">Brugere:</h4>
+            <button
+              className="text-blue-500 hover:underline"
+              onClick={toggleModal}
+            >
+              Brugere
+            </button>
+          </div>
+        </div>
+      )}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-2 rounded-md shadow-lg w-96">
+            <h4 className="text-black mb-2">Brugere:</h4>
             <ul className="list-disc list-inside">
               {users.map((user, index) => (
                 <li key={index} className="flex justify-between">
@@ -76,6 +90,12 @@ export const AddUser: React.FC = () => {
                 </li>
               ))}
             </ul>
+            <button
+              className="mt-4 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+              onClick={toggleModal}
+            >
+              Luk
+            </button>
           </div>
         </div>
       )}
