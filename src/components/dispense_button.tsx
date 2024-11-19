@@ -22,8 +22,8 @@ export const SpejlaegButtonComponent: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center">
-      <div className="flex space-x-12 p-6">
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="flex space-x-12 p-4">
         <button
           onClick={handleSingleButtonClick}
           className="hover:bg-stone-100 focus:outline-none"
@@ -31,7 +31,7 @@ export const SpejlaegButtonComponent: React.FC = () => {
           <img
             src="../../src/Images/blub.png"
             alt="Spejlæg"
-            className="flex w-40 h-40"
+            className="flex w-52 h-52"
           />
         </button>
         <button
@@ -41,7 +41,7 @@ export const SpejlaegButtonComponent: React.FC = () => {
           <img
             src="../../src/Images/blub2.png"
             alt="Double Spejlæg"
-            className="flex w-40 h-40"
+            className="flex w-52 h-52"
           />
         </button>
       </div>
