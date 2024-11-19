@@ -35,7 +35,7 @@ export const RefillButton: React.FC = () => {
   return (
     <div>
       <button
-        className="bg-zinc-800 text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-56"
+        className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32"
         onClick={handleOpenPopup}
       >
         Påfyld væskebeholdere
