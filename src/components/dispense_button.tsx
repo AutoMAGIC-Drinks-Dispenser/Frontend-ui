@@ -22,7 +22,7 @@ export const SpejlaegButtonComponent: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen w-screen overflow-hidden">
+    <div className="flex items-center justify-center">
       <div className="flex space-x-12">
         <button
           onClick={handleSingleButtonClick}
@@ -46,10 +46,7 @@ export const SpejlaegButtonComponent: React.FC = () => {
         </button>
       </div>
       {showPopup && (
-        <SpejlaegPopupModal
-          onClose={handleClosePopup}
-          onStart={handleStart}
-        />
+        <SpejlaegPopupModal onClose={handleClosePopup} onStart={handleStart} />
       )}
     </div>
   );
