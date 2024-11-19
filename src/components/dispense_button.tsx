@@ -31,7 +31,7 @@ export const SpejlaegButtonComponent: React.FC = () => {
           <img
             src="../../src/Images/blub.png"
             alt="Spejlæg"
-            className="flex w-20 h-20"
+            className="flex w-40 h-40"
           />
         </button>
         <button
@@ -41,7 +41,7 @@ export const SpejlaegButtonComponent: React.FC = () => {
           <img
             src="../../src/Images/blub2.png"
             alt="Double Spejlæg"
-            className="flex w-20 h-20"
+            className="flex w-40 h-40"
           />
         </button>
       </div>
