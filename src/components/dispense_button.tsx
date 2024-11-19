@@ -22,7 +22,7 @@ export const SpejlaegButtonComponent: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center">
+    <div className="flex items-center justify-center py-20">
       <div className="flex space-x-12">
         <button
           onClick={handleSingleButtonClick}
@@ -31,7 +31,7 @@ export const SpejlaegButtonComponent: React.FC = () => {
           <img
             src="../../src/Images/blub.png"
             alt="Spejlæg"
-            className="flex w-64 h-64"
+            className="flex w-52 h-52"
           />
         </button>
         <button
@@ -41,7 +41,7 @@ export const SpejlaegButtonComponent: React.FC = () => {
           <img
             src="../../src/Images/blub2.png"
             alt="Double Spejlæg"
-            className="flex w-64 h-64"
+            className="flex w-52 h-52"
           />
         </button>
       </div>

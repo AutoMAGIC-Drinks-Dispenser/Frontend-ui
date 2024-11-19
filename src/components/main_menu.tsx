@@ -7,7 +7,6 @@ export const MainMenu: React.FC = () => {
       <div>
         <HeaderComponent />
       </div>
-      <img className="p-4 w-auto h-auto" src="../../src/Images/blub3.png" />
       <SpejlaegButtonComponent />
       <img />
     </div>

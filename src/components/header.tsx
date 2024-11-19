@@ -3,7 +3,7 @@ import { ExtraMenu } from "./menu/extra_menu";
 
 export const HeaderComponent: React.FC = () => {
   return (
-    <div className="bg-stone-200 text-center py-4 border-b-2 border-black flex items-center">
+    <div className="bg-stone-200 text-center border-b-2 border-black flex items-center">
       <ExtraMenu />
     </div>
   );
