@@ -52,6 +52,16 @@ export const AddUser: React.FC = () => {
     setCurrentField(null);
   };
 
+  const handleOuterClick = (e: React.MouseEvent) => {
+    // Close the keyboard if the click happens outside the inputs and the keyboard
+    if (
+      !(e.target as HTMLElement).closest(".keyboard-container") &&
+      !(e.target as HTMLElement).closest(".input-field")
+    ) {
+      closeKeyboard();
+    }
+  };
+
   const handleShift = () => {
     setKeyboardShift((prev) => !prev);
   };
@@ -77,7 +87,10 @@ export const AddUser: React.FC = () => {
       };
 
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onClick={handleOuterClick} // Handles clicks outside of inputs/keyboard
+    >
       <button
         className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32"
         onClick={toggleDropdown}
@@ -95,16 +108,14 @@ export const AddUser: React.FC = () => {
             placeholder="UserID"
             value={newUserID}
             onFocus={() => handleFieldFocus("userID")}
-            onBlur={closeKeyboard} // Close keyboard on field blur
-            className="border p-2 w-full mb-2"
+            className="border p-2 w-full mb-2 input-field"
           />
           <input
             type="text"
             placeholder="Username"
             value={newUsername}
             onFocus={() => handleFieldFocus("username")}
-            onBlur={closeKeyboard} // Close keyboard on field blur
-            className="border p-2 w-full mb-2"
+            className="border p-2 w-full mb-2 input-field"
           />
           <button
             className="bg-blue-400 text-white px-4 py-2 rounded-md hover:bg-blue-500 w-full"
@@ -152,8 +163,8 @@ export const AddUser: React.FC = () => {
       )}
       {keyboardVisible && (
         <div
-          className="fixed inset-x-0 bottom-0 bg-gray-100"
-          style={{ height: "45vh" }}
+          className="fixed inset-x-0 bottom-0 bg-gray-100 keyboard-container"
+          style={{ height: "46vh" }}
         >
           <Keyboard
             onChange={handleKeyboardChange}
