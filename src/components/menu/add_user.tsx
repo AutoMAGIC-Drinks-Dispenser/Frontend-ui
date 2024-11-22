@@ -13,6 +13,7 @@ export const AddUser: React.FC = () => {
     "userID" | "username" | null
   >(null);
   const [keyboardInput, setKeyboardInput] = useState("");
+  const [keyboardShift, setKeyboardShift] = useState(false);
 
   const users = useUserStore((state) => state.users);
   const addUser = useUserStore((state) => state.addUser);
@@ -27,7 +28,7 @@ export const AddUser: React.FC = () => {
       addUser({ userID: newUserID, username: newUsername });
       setNewUserID("");
       setNewUsername("");
-      closeKeyboard(); // Close the keyboard when the user is added
+      closeKeyboard(); // Close keyboard when user is added
     }
   };
 
@@ -51,6 +52,30 @@ export const AddUser: React.FC = () => {
     setCurrentField(null);
   };
 
+  const handleShift = () => {
+    setKeyboardShift((prev) => !prev);
+  };
+
+  const danishKeyboardLayout = keyboardShift
+    ? {
+        default: [
+          "1 2 3 4 5 6 7 8 9 0 + @",
+          "Q W E R T Y U I O P Å",
+          "A S D F G H J K L Æ Ø",
+          "< Z X C V B N M , . -",
+          "{shift} {space} {backspace}",
+        ],
+      }
+    : {
+        default: [
+          "1 2 3 4 5 6 7 8 9 0 + ´",
+          "q w e r t y u i o p å",
+          "a s d f g h j k l æ ø",
+          "< z x c v b n m , . -",
+          "{shift} {space} {backspace}",
+        ],
+      };
+
   return (
     <div className="relative">
       <button
@@ -70,16 +95,16 @@ export const AddUser: React.FC = () => {
             placeholder="UserID"
             value={newUserID}
             onFocus={() => handleFieldFocus("userID")}
+            onBlur={closeKeyboard} // Close keyboard on field blur
             className="border p-2 w-full mb-2"
-            readOnly
           />
           <input
             type="text"
             placeholder="Username"
             value={newUsername}
             onFocus={() => handleFieldFocus("username")}
+            onBlur={closeKeyboard} // Close keyboard on field blur
             className="border p-2 w-full mb-2"
-            readOnly
           />
           <button
             className="bg-blue-400 text-white px-4 py-2 rounded-md hover:bg-blue-500 w-full"
@@ -133,18 +158,14 @@ export const AddUser: React.FC = () => {
           <Keyboard
             onChange={handleKeyboardChange}
             input={keyboardInput}
-            layout={{
-              default: [
-                "1 2 3 4 5 6 7 8 9 0",
-                "q w e r t y u i o p",
-                "a s d f g h j k l",
-                "z x c v b n m",
-                "{space} {backspace}",
-              ],
-            }}
+            layout={danishKeyboardLayout}
             display={{
-              "{space}": "Space",
+              "{space}": "Mellemrum",
+              "{shift}": "Shift",
               "{backspace}": "←",
+            }}
+            onKeyPress={(button) => {
+              if (button === "{shift}") handleShift();
             }}
           />
         </div>
