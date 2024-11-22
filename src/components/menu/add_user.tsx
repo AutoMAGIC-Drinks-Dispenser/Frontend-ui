@@ -1,18 +1,32 @@
 import React, { useState } from "react";
 import { useUserStore } from "../../store/store";
+import Keyboard from "react-simple-keyboard";
+import "react-simple-keyboard/build/css/index.css";
 
 export const AddUser: React.FC = () => {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [isModalOpen, setModalOpen] = useState(false);
   const [newUserID, setNewUserID] = useState("");
   const [newUsername, setNewUsername] = useState("");
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [currentField, setCurrentField] = useState<
+    "userID" | "username" | null
+  >(null);
+  const [keyboardInput, setKeyboardInput] = useState("");
 
   const users = useUserStore((state) => state.users);
   const addUser = useUserStore((state) => state.addUser);
   const deleteUser = useUserStore((state) => state.deleteUser);
 
-  const toggleDropdown = () => setDropdownOpen(!isDropdownOpen);
-  const toggleModal = () => setModalOpen(!isModalOpen);
+  const toggleDropdown = () => {
+    setDropdownOpen(!isDropdownOpen);
+    if (keyboardVisible) closeKeyboard(); // Automatically close keyboard
+  };
+
+  const toggleModal = () => {
+    setModalOpen(!isModalOpen);
+    if (keyboardVisible) closeKeyboard(); // Automatically close keyboard
+  };
 
   const handleAddUser = () => {
     if (newUserID && newUsername) {
@@ -20,6 +34,26 @@ export const AddUser: React.FC = () => {
       setNewUserID("");
       setNewUsername("");
     }
+  };
+
+  const handleFieldFocus = (field: "userID" | "username") => {
+    setCurrentField(field);
+    setKeyboardInput(field === "userID" ? newUserID : newUsername);
+    setKeyboardVisible(true);
+  };
+
+  const handleKeyboardChange = (value: string) => {
+    setKeyboardInput(value);
+    if (currentField === "userID") {
+      setNewUserID(value);
+    } else if (currentField === "username") {
+      setNewUsername(value);
+    }
+  };
+
+  const closeKeyboard = () => {
+    setKeyboardVisible(false);
+    setCurrentField(null);
   };
 
   return (
@@ -40,15 +74,17 @@ export const AddUser: React.FC = () => {
             type="text"
             placeholder="UserID"
             value={newUserID}
-            onChange={(e) => setNewUserID(e.target.value)}
+            onFocus={() => handleFieldFocus("userID")}
             className="border p-2 w-full mb-2"
+            readOnly
           />
           <input
             type="text"
             placeholder="Username"
             value={newUsername}
-            onChange={(e) => setNewUsername(e.target.value)}
+            onFocus={() => handleFieldFocus("username")}
             className="border p-2 w-full mb-2"
+            readOnly
           />
           <button
             className="bg-blue-400 text-white px-4 py-2 rounded-md hover:bg-blue-500 w-full"
@@ -92,6 +128,27 @@ export const AddUser: React.FC = () => {
               Luk
             </button>
           </div>
+        </div>
+      )}
+      {keyboardVisible && (
+        <div className="fixed inset-x-0 bottom-0 bg-gray-100">
+          <Keyboard
+            onChange={handleKeyboardChange}
+            input={keyboardInput}
+            layout={{
+              default: [
+                "1 2 3 4 5 6 7 8 9 0",
+                "q w e r t y u i o p",
+                "a s d f g h j k l",
+                "z x c v b n m",
+                "{space} {backspace}",
+              ],
+            }}
+            display={{
+              "{space}": "Space",
+              "{backspace}": "←",
+            }}
+          />
         </div>
       )}
     </div>
