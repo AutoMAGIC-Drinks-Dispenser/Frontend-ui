@@ -153,7 +153,7 @@ export const AddUser: React.FC = () => {
       {keyboardVisible && (
         <div
           className="fixed inset-x-0 bottom-0 bg-gray-100"
-          style={{ height: "40vh" }}
+          style={{ height: "45vh" }}
         >
           <Keyboard
             onChange={handleKeyboardChange}
