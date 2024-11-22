@@ -18,21 +18,16 @@ export const AddUser: React.FC = () => {
   const addUser = useUserStore((state) => state.addUser);
   const deleteUser = useUserStore((state) => state.deleteUser);
 
-  const toggleDropdown = () => {
-    setDropdownOpen(!isDropdownOpen);
-    if (keyboardVisible) closeKeyboard(); // Automatically close keyboard
-  };
+  const toggleDropdown = () => setDropdownOpen(!isDropdownOpen);
 
-  const toggleModal = () => {
-    setModalOpen(!isModalOpen);
-    if (keyboardVisible) closeKeyboard(); // Automatically close keyboard
-  };
+  const toggleModal = () => setModalOpen(!isModalOpen);
 
   const handleAddUser = () => {
     if (newUserID && newUsername) {
       addUser({ userID: newUserID, username: newUsername });
       setNewUserID("");
       setNewUsername("");
+      closeKeyboard(); // Close the keyboard when the user is added
     }
   };
 
@@ -131,7 +126,10 @@ export const AddUser: React.FC = () => {
         </div>
       )}
       {keyboardVisible && (
-        <div className="fixed inset-x-0 bottom-0 bg-gray-100">
+        <div
+          className="fixed inset-x-0 bottom-0 bg-gray-100"
+          style={{ height: "40vh" }}
+        >
           <Keyboard
             onChange={handleKeyboardChange}
             input={keyboardInput}
