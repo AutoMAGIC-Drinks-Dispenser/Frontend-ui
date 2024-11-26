@@ -8,7 +8,6 @@ export const MainMenu: React.FC = () => {
         <HeaderComponent />
       </div>
       <SpejlaegButtonComponent />
-      <img />
     </div>
   );
 };

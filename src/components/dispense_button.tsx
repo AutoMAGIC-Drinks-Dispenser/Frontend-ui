@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { SpejlaegPopupModal } from "./dispense_button_modal";
+import { sendDataToArduino } from "./communication/web_serial_com";
 
 export const SpejlaegButtonComponent: React.FC = () => {
   const [showPopup, setShowPopup] = useState<"single" | "double" | null>(null);
@@ -17,8 +18,10 @@ export const SpejlaegButtonComponent: React.FC = () => {
   };
 
   const handleStart = () => {
-    setShowPopup(null);
-    // Add the logic for starting the dispensing here
+    if (showPopup) {
+      sendDataToArduino(showPopup); // Send data to Arduino
+      setShowPopup(null);
+    }
   };
 
   return (
