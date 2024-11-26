@@ -62,14 +62,14 @@ export const WebSerialCommunication: React.FC = () => {
     <div>
       {!port ? (
         <button
-          className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32"
+          className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32 h-12"
           onClick={requestSerialPort}
         >
           Connect to Arduino
         </button>
       ) : (
         <button
-          className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32"
+          className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32 h-12"
           onClick={closeSerialPort}
         >
           Disconnect
