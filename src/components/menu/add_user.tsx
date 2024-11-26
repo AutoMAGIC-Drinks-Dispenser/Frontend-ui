@@ -34,7 +34,14 @@ export const AddUser: React.FC = () => {
 
   const handleFieldFocus = (field: "userID" | "username") => {
     setCurrentField(field);
-    setKeyboardInput(field === "userID" ? newUserID : newUsername);
+
+    // Initialize keyboardInput with the current value of the field
+    if (field === "userID") {
+      setKeyboardInput(newUserID);
+    } else if (field === "username") {
+      setKeyboardInput(newUsername);
+    }
+
     setKeyboardVisible(true);
   };
 
@@ -50,10 +57,10 @@ export const AddUser: React.FC = () => {
   const closeKeyboard = () => {
     setKeyboardVisible(false);
     setCurrentField(null);
+    setKeyboardInput(""); // Clear keyboard input when closing the keyboard
   };
 
   const handleOuterClick = (e: React.MouseEvent) => {
-    // Close the keyboard if the click happens outside the inputs and the keyboard
     if (
       !(e.target as HTMLElement).closest(".keyboard-container") &&
       !(e.target as HTMLElement).closest(".input-field")
