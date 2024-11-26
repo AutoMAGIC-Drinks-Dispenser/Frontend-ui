@@ -9,10 +9,10 @@ export const AddUser: React.FC = () => {
   const [newUserID, setNewUserID] = useState("");
   const [newUsername, setNewUsername] = useState("");
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [currentInput, setCurrentInput] = useState<string>(""); // Manages the keyboard input independently
   const [currentField, setCurrentField] = useState<
     "userID" | "username" | null
   >(null);
-  const [keyboardInput, setKeyboardInput] = useState("");
   const [keyboardShift, setKeyboardShift] = useState(false);
 
   const users = useUserStore((state) => state.users);
@@ -36,23 +36,25 @@ export const AddUser: React.FC = () => {
     setCurrentField(field);
     setKeyboardVisible(true);
 
-    // Set the keyboard input to the current value of the focused field
-    setKeyboardInput(field === "userID" ? newUserID : newUsername);
+    // Set the current input based on the focused field
+    setCurrentInput(field === "userID" ? newUserID : newUsername);
   };
 
   const handleKeyboardChange = (value: string) => {
-    setKeyboardInput(value);
+    setCurrentInput(value);
+
+    // Update the appropriate state based on the current field
     if (currentField === "userID") {
       setNewUserID(value);
     } else if (currentField === "username") {
-      setNewUsername(value);
+      setNewUsername(value.slice(0, 10)); // Enforce the 10-character limit for username
     }
   };
 
   const closeKeyboard = () => {
     setKeyboardVisible(false);
     setCurrentField(null);
-    setKeyboardInput(""); // Clear keyboard input when closing the keyboard
+    setCurrentInput(""); // Clear the keyboard input when closing the keyboard
   };
 
   const handleOuterClick = (e: React.MouseEvent) => {
@@ -107,15 +109,15 @@ export const AddUser: React.FC = () => {
             placeholder="UserID"
             value={newUserID}
             onFocus={() => handleFieldFocus("userID")}
-            onChange={(e) => setNewUserID(e.target.value)} // Update userID directly
+            onChange={(e) => setNewUserID(e.target.value)}
             className="border p-2 w-full mb-2 input-field"
           />
           <input
             type="text"
-            placeholder="Username"
+            placeholder="Username (max 10 chars)"
             value={newUsername}
             onFocus={() => handleFieldFocus("username")}
-            onChange={(e) => setNewUsername(e.target.value)} // Update username directly
+            onChange={(e) => setNewUsername(e.target.value.slice(0, 10))}
             className="border p-2 w-full mb-2 input-field"
           />
           <button
@@ -169,7 +171,7 @@ export const AddUser: React.FC = () => {
         >
           <Keyboard
             onChange={handleKeyboardChange}
-            input={keyboardInput}
+            input={currentInput}
             layout={danishKeyboardLayout}
             display={{
               "{space}": "Mellemrum",
