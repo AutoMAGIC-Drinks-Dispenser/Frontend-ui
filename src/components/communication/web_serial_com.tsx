@@ -1,19 +1,24 @@
-import React, { useState, useEffect } from "react";
-import { useUserStore } from "../../store/store";
+import { useState } from "react";
 import { SerialPort } from "serialport";
+
+let globalWriter: WritableStreamDefaultWriter<string> | null = null;
+
+export const sendDataToArduino = async (data: string) => {
+  if (!globalWriter) {
+    console.error("No serial writer available. Connect to the Arduino first.");
+    return;
+  }
+
+  try {
+    await globalWriter.write(data + "\n"); // Send data with a newline character
+    console.log(`Sent to Arduino: ${data}`);
+  } catch (err) {
+    console.error("Failed to write to Arduino:", err);
+  }
+};
 
 export const WebSerialCommunication: React.FC = () => {
   const [port, setPort] = useState<SerialPort | null>(null);
-  const [writer, setWriter] =
-    useState<WritableStreamDefaultWriter<string> | null>(null);
-  const users = useUserStore((state) => state.users);
-
-  useEffect(() => {
-    if (users.length === 0 || !writer) return;
-
-    const newUser = users[users.length - 1];
-    sendUserID(newUser.userID);
-  });
 
   const requestSerialPort = async () => {
     try {
@@ -22,15 +27,14 @@ export const WebSerialCommunication: React.FC = () => {
           serial: { requestPort: () => Promise<SerialPort> };
         }
       ).serial.requestPort(); // Prompts user to select a serial port
-      (newPort as SerialPort).open({ baudRate: 9600 }); // Match baud rate with the Arduino
+      await (newPort as SerialPort).open({ baudRate: 9600 }); // Match baud rate with the Arduino
       setPort(newPort);
 
       const textEncoder = new TextEncoderStream();
       textEncoder.readable.pipeTo(
         newPort.writable as unknown as WritableStream<Uint8Array>
       );
-      const newWriter = textEncoder.writable.getWriter();
-      setWriter(newWriter);
+      globalWriter = textEncoder.writable.getWriter();
 
       console.log("Serial port opened successfully!");
     } catch (err) {
@@ -38,28 +42,14 @@ export const WebSerialCommunication: React.FC = () => {
     }
   };
 
-  const sendUserID = async (userID: string) => {
-    if (!writer) {
-      console.error("No writer available. Ensure the port is open.");
-      return;
-    }
-
-    try {
-      await writer.write(userID + "\n"); // Send userID followed by a newline
-      console.log(`Sent UserID: ${userID}`);
-    } catch (err) {
-      console.error("Failed to write to serial port:", err);
-    }
-  };
-
   const closeSerialPort = async () => {
     try {
-      if (writer) {
-        await writer.close();
-        setWriter(null);
+      if (globalWriter) {
+        await globalWriter.close();
+        globalWriter = null;
       }
       if (port) {
-        (port as SerialPort).close();
+        await (port as SerialPort).close();
         setPort(null);
       }
       console.log("Serial port closed.");
@@ -81,7 +71,6 @@ export const WebSerialCommunication: React.FC = () => {
         <button
           className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32"
           onClick={closeSerialPort}
-          style={{ minHeight: "3rem" }}
         >
           Disconnect
         </button>
