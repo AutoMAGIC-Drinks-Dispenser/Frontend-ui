@@ -12,6 +12,7 @@ export const AddUser: React.FC = () => {
   const [currentField, setCurrentField] = useState<
     "userID" | "username" | null
   >(null);
+  const [keyboardInput, setKeyboardInput] = useState("");
   const [keyboardShift, setKeyboardShift] = useState(false);
 
   const users = useUserStore((state) => state.users);
@@ -34,9 +35,13 @@ export const AddUser: React.FC = () => {
   const handleFieldFocus = (field: "userID" | "username") => {
     setCurrentField(field);
     setKeyboardVisible(true);
+
+    // Set the keyboard input to the current value of the focused field
+    setKeyboardInput(field === "userID" ? newUserID : newUsername);
   };
 
   const handleKeyboardChange = (value: string) => {
+    setKeyboardInput(value);
     if (currentField === "userID") {
       setNewUserID(value);
     } else if (currentField === "username") {
@@ -47,6 +52,7 @@ export const AddUser: React.FC = () => {
   const closeKeyboard = () => {
     setKeyboardVisible(false);
     setCurrentField(null);
+    setKeyboardInput(""); // Clear keyboard input when closing the keyboard
   };
 
   const handleOuterClick = (e: React.MouseEvent) => {
@@ -163,7 +169,7 @@ export const AddUser: React.FC = () => {
         >
           <Keyboard
             onChange={handleKeyboardChange}
-            input={currentField === "userID" ? newUserID : newUsername}
+            input={keyboardInput}
             layout={danishKeyboardLayout}
             display={{
               "{space}": "Mellemrum",
