@@ -12,7 +12,6 @@ export const AddUser: React.FC = () => {
   const [currentField, setCurrentField] = useState<
     "userID" | "username" | null
   >(null);
-  const [keyboardInput, setKeyboardInput] = useState("");
   const [keyboardShift, setKeyboardShift] = useState(false);
 
   const users = useUserStore((state) => state.users);
@@ -28,25 +27,16 @@ export const AddUser: React.FC = () => {
       addUser({ userID: newUserID, username: newUsername });
       setNewUserID("");
       setNewUsername("");
-      closeKeyboard(); // Close keyboard when user is added
+      closeKeyboard();
     }
   };
 
   const handleFieldFocus = (field: "userID" | "username") => {
     setCurrentField(field);
-
-    // Initialize keyboardInput with the current value of the field
-    if (field === "userID") {
-      setKeyboardInput(newUserID);
-    } else if (field === "username") {
-      setKeyboardInput(newUsername);
-    }
-
     setKeyboardVisible(true);
   };
 
   const handleKeyboardChange = (value: string) => {
-    setKeyboardInput(value);
     if (currentField === "userID") {
       setNewUserID(value);
     } else if (currentField === "username") {
@@ -57,7 +47,6 @@ export const AddUser: React.FC = () => {
   const closeKeyboard = () => {
     setKeyboardVisible(false);
     setCurrentField(null);
-    setKeyboardInput(""); // Clear keyboard input when closing the keyboard
   };
 
   const handleOuterClick = (e: React.MouseEvent) => {
@@ -94,10 +83,7 @@ export const AddUser: React.FC = () => {
       };
 
   return (
-    <div
-      className="relative"
-      onClick={handleOuterClick} // Handles clicks outside of inputs/keyboard
-    >
+    <div className="relative" onClick={handleOuterClick}>
       <button
         className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32"
         onClick={toggleDropdown}
@@ -115,6 +101,7 @@ export const AddUser: React.FC = () => {
             placeholder="UserID"
             value={newUserID}
             onFocus={() => handleFieldFocus("userID")}
+            onChange={(e) => setNewUserID(e.target.value)} // Update userID directly
             className="border p-2 w-full mb-2 input-field"
           />
           <input
@@ -122,6 +109,7 @@ export const AddUser: React.FC = () => {
             placeholder="Username"
             value={newUsername}
             onFocus={() => handleFieldFocus("username")}
+            onChange={(e) => setNewUsername(e.target.value)} // Update username directly
             className="border p-2 w-full mb-2 input-field"
           />
           <button
@@ -175,7 +163,7 @@ export const AddUser: React.FC = () => {
         >
           <Keyboard
             onChange={handleKeyboardChange}
-            input={keyboardInput}
+            input={currentField === "userID" ? newUserID : newUsername}
             layout={danishKeyboardLayout}
             display={{
               "{space}": "Mellemrum",
