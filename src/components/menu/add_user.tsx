@@ -1,97 +1,112 @@
-import React, { useState } from "react";
-import { useUserStore } from "../../store/store";
-import Keyboard from "react-simple-keyboard";
-import "react-simple-keyboard/build/css/index.css";
+import React, { useState, useEffect } from "react";
+import { useUserStore } from '../../store/store';
+import { addUser as addUserApi, removeUser, getAllUsers } from '../../components/communication/api';
 
 export const AddUser: React.FC = () => {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [isModalOpen, setModalOpen] = useState(false);
-  const [newUserID, setNewUserID] = useState("");
   const [newUsername, setNewUsername] = useState("");
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [currentInput, setCurrentInput] = useState<string>(""); // Manages the keyboard input independently
-  const [currentField, setCurrentField] = useState<
-    "userID" | "username" | null
-  >(null);
-  const [keyboardShift, setKeyboardShift] = useState(false);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  
+  const { users, addUser, deleteUser } = useUserStore();
 
-  const users = useUserStore((state) => state.users);
-  const addUser = useUserStore((state) => state.addUser);
-  const deleteUser = useUserStore((state) => state.deleteUser);
+  // Load users from database when component mounts
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        // Reset store before loading
+        useUserStore.setState({ users: [] });
+        const dbUsers = await getAllUsers();
+        
+        // Add unique users to store
+        const uniqueUsers = Array.from(new Set(
+          dbUsers.map(user => JSON.stringify({ 
+            userID: user.id.toString(), 
+            username: user.username 
+          }))
+        )).map(str => JSON.parse(str));
+
+        uniqueUsers.forEach(user => addUser(user));
+      } catch (err) {
+        setError('Kunne ikke hente brugere fra databasen');
+      }
+    };
+
+    loadUsers();
+  }, [addUser]);
 
   const toggleDropdown = () => setDropdownOpen(!isDropdownOpen);
-
-  const toggleModal = () => setModalOpen(!isModalOpen);
-
-  const handleAddUser = () => {
-    if (newUserID && newUsername) {
-      addUser({ userID: newUserID, username: newUsername });
-      setNewUserID("");
-      setNewUsername("");
-      closeKeyboard();
+  
+  const toggleModal = () => {
+    setModalOpen(!isModalOpen);
+    if (!isModalOpen) {
+      refreshUsers();
     }
   };
 
-  const handleFieldFocus = (field: "userID" | "username") => {
-    setCurrentField(field);
-    setKeyboardVisible(true);
+  const refreshUsers = async () => {
+    try {
+      // Reset store before refreshing
+      useUserStore.setState({ users: [] });
+      const dbUsers = await getAllUsers();
+      
+      // Add unique users to store
+      const uniqueUsers = Array.from(new Set(
+        dbUsers.map(user => JSON.stringify({ 
+          userID: user.id.toString(), 
+          username: user.username 
+        }))
+      )).map(str => JSON.parse(str));
 
-    // Set the current input based on the focused field
-    setCurrentInput(field === "userID" ? newUserID : newUsername);
-  };
-
-  const handleKeyboardChange = (value: string) => {
-    setCurrentInput(value);
-
-    // Update the appropriate state based on the current field
-    if (currentField === "userID") {
-      setNewUserID(value);
-    } else if (currentField === "username") {
-      setNewUsername(value.slice(0, 10)); // Enforce the 10-character limit for username
+      uniqueUsers.forEach(user => addUser(user));
+    } catch (err) {
+      setError('Kunne ikke opdatere brugerlisten');
     }
   };
 
-  const closeKeyboard = () => {
-    setKeyboardVisible(false);
-    setCurrentField(null);
-    setCurrentInput(""); // Clear the keyboard input when closing the keyboard
-  };
-
-  const handleOuterClick = (e: React.MouseEvent) => {
-    if (
-      !(e.target as HTMLElement).closest(".keyboard-container") &&
-      !(e.target as HTMLElement).closest(".input-field")
-    ) {
-      closeKeyboard();
-    }
-  };
-
-  const handleShift = () => {
-    setKeyboardShift((prev) => !prev);
-  };
-
-  const danishKeyboardLayout = keyboardShift
-    ? {
-        default: [
-          "1 2 3 4 5 6 7 8 9 0 + @",
-          "Q W E R T Y U I O P Å",
-          "A S D F G H J K L Æ Ø",
-          "< Z X C V B N M , . -",
-          "{shift} {space} {backspace}",
-        ],
+  const handleAddUser = async () => {
+    try {
+      setError("");
+      if (!newUsername) {
+        setError("Indtast venligst et brugernavn");
+        return;
       }
-    : {
-        default: [
-          "1 2 3 4 5 6 7 8 9 0 + ´",
-          "q w e r t y u i o p å",
-          "a s d f g h j k l æ ø",
-          "< z x c v b n m , . -",
-          "{shift} {space} {backspace}",
-        ],
-      };
+
+      const result = await addUserApi(newUsername);
+      
+      // Add user to store
+      addUser({
+        userID: result.id.toString(),
+        username: newUsername
+      });
+
+      setSuccessMessage(`Bruger ${newUsername} tilføjet med ID: ${result.id}`);
+      setNewUsername("");
+      
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Der skete en fejl');
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      setError("");
+      await removeUser(Number(userId));
+      
+      // Remove user from store
+      deleteUser(userId);
+      
+      setSuccessMessage("Bruger slettet");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Der skete en fejl');
+    }
+  };
 
   return (
-    <div className="relative" onClick={handleOuterClick}>
+    <div className="relative">
       <button
         className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32"
         onClick={toggleDropdown}
@@ -101,24 +116,17 @@ export const AddUser: React.FC = () => {
           ? `${users[0].userID} ${users[0].username}`
           : "Ingen brugere"}
       </button>
+      
       {isDropdownOpen && (
         <div className="absolute bg-white border rounded-md shadow-lg mt-2 p-4 w-52">
           <h3 className="text-black mb-2">Tilføj ny bruger</h3>
           <input
             type="text"
-            placeholder="UserID"
-            value={newUserID}
-            onFocus={() => handleFieldFocus("userID")}
-            onChange={(e) => setNewUserID(e.target.value)}
-            className="border p-2 w-full mb-2 input-field"
-          />
-          <input
-            type="text"
-            placeholder="Username (max 10 chars)"
+            placeholder="Username"
             value={newUsername}
-            onFocus={() => handleFieldFocus("username")}
-            onChange={(e) => setNewUsername(e.target.value.slice(0, 10))}
-            className="border p-2 w-full mb-2 input-field"
+            onChange={(e) => setNewUsername(e.target.value)}
+            className="border p-2 w-full mb-2"
+            maxLength={10}
           />
           <button
             className="bg-blue-400 text-white px-4 py-2 rounded-md hover:bg-blue-500 w-full"
@@ -126,6 +134,19 @@ export const AddUser: React.FC = () => {
           >
             Tilføj bruger
           </button>
+          
+          {error && (
+            <div className="mt-2 p-2 bg-red-100 text-red-600 rounded-md text-sm">
+              {error}
+            </div>
+          )}
+          
+          {successMessage && (
+            <div className="mt-2 p-2 bg-green-100 text-green-600 rounded-md text-sm">
+              {successMessage}
+            </div>
+          )}
+          
           <div className="mt-4">
             <button
               className="text-blue-500 hover:underline"
@@ -136,19 +157,20 @@ export const AddUser: React.FC = () => {
           </div>
         </div>
       )}
+      
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-2 rounded-md shadow-lg w-96">
             <h4 className="text-black mb-2">Brugere:</h4>
             <ul className="list-disc list-inside">
-              {users.map((user, index) => (
-                <li key={index} className="flex justify-between">
+              {users.map((user) => (
+                <li key={user.userID} className="flex justify-between">
                   <span>
                     {user.userID} {user.username}
                   </span>
                   <button
                     className="text-red-500 hover:underline ml-2"
-                    onClick={() => deleteUser(user.userID)}
+                    onClick={() => handleDeleteUser(user.userID)}
                   >
                     Slet
                   </button>
@@ -162,26 +184,6 @@ export const AddUser: React.FC = () => {
               Luk
             </button>
           </div>
-        </div>
-      )}
-      {keyboardVisible && (
-        <div
-          className="fixed inset-x-0 bottom-0 bg-gray-100 keyboard-container"
-          style={{ height: "46vh" }}
-        >
-          <Keyboard
-            onChange={handleKeyboardChange}
-            input={currentInput}
-            layout={danishKeyboardLayout}
-            display={{
-              "{space}": "Mellemrum",
-              "{shift}": "Shift",
-              "{backspace}": "←",
-            }}
-            onKeyPress={(button) => {
-              if (button === "{shift}") handleShift();
-            }}
-          />
         </div>
       )}
     </div>

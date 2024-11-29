@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { SpejlaegPopupModal } from "./dispense_button_modal";
 import { sendDataToArduino } from "./communication/web_serial_com";
+import { incrementAlltime } from "./communication/api"; // Add this import
 
 export const SpejlaegButtonComponent: React.FC = () => {
   const [showPopup, setShowPopup] = useState<"single" | "double" | null>(null);
+  const [error, setError] = useState<string>("");
 
   const handleSingleButtonClick = () => {
     setShowPopup("single");
@@ -15,12 +17,31 @@ export const SpejlaegButtonComponent: React.FC = () => {
 
   const handleClosePopup = () => {
     setShowPopup(null);
+    setError("");
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (showPopup) {
-      sendDataToArduino(showPopup); // Send data to Arduino
-      setShowPopup(null);
+      try {
+        // Get the logged in user's ID
+        const userId = sessionStorage.getItem('userId');
+        if (!userId) {
+          setError('Du skal være logget ind for at bestille');
+          return;
+        }
+
+        // Increment the alltime counter
+        await incrementAlltime(Number(userId));
+        
+        // If increment was successful, send to Arduino
+        sendDataToArduino(showPopup);
+        
+        // Close the popup
+        setShowPopup(null);
+        setError("");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Der skete en fejl');
+      }
     }
   };
 
@@ -49,7 +70,11 @@ export const SpejlaegButtonComponent: React.FC = () => {
         </button>
       </div>
       {showPopup && (
-        <SpejlaegPopupModal onClose={handleClosePopup} onStart={handleStart} />
+        <SpejlaegPopupModal 
+          onClose={handleClosePopup} 
+          onStart={handleStart}
+          err={error} // Pass error to modal if you want to display it there
+        />
       )}
     </div>
   );
