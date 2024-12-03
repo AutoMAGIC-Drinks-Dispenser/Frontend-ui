@@ -1,112 +1,124 @@
-import { useState } from "react";
-import { SerialPort, ReadlineParser } from "serialport";
-import { useRFIDStore } from "../../store/store";
+import React, { useState } from "react";
+import { SerialPort } from "serialport";
 
-let globalPort: SerialPort | null = null;
+let globalWriter: WritableStreamDefaultWriter<string> | null = null;
+let globalReader: ReadableStreamDefaultReader<string> | null = null;
 
 export const sendDataToArduino = async (data: string) => {
-  if (!globalPort) {
-    console.error("No serial port available. Connect to the Arduino first.");
+  if (!globalWriter) {
+    console.error("No serial writer available. Connect to the Arduino first.");
     return;
   }
 
   try {
-    globalPort.write(data + "\n", (err) => {
-      if (err) {
-        console.error("Error writing to Arduino:", err.message);
-      } else {
-        console.log(`Sent to Arduino: ${data}`);
-      }
-    });
+    await globalWriter.write(data + "\n"); // Send data with a newline character
+    console.log(`Sent to Arduino: ${data}`);
   } catch (err) {
-    console.error("Failed to send data to Arduino:", err);
+    console.error("Failed to write to Arduino:", err);
   }
 };
 
 export const WebSerialCommunication: React.FC = () => {
-  const [portOpen, setPortOpen] = useState(false);
-  const setRFID = useRFIDStore((state) => state.setRFID);
+  const [port, setPort] = useState<SerialPort | null>(null);
+  const [incomingData, setIncomingData] = useState<string>("");
 
-  const connectToArduino = async () => {
+  const requestSerialPort = async () => {
     try {
-      // List all available ports
-      const ports = await SerialPort.list();
-      console.log("Available ports:", ports);
-
-      // Find the desired port (manually or by matching vendor/product IDs)
-      const portPath = ports.find((p) => p.path)?.path; // Replace with specific port if necessary
-      if (!portPath) {
-        console.error("No serial ports found.");
-        return;
-      }
-
-      console.log("Connecting to port:", portPath);
-
-      // Initialize the serial port
-      globalPort = new SerialPort({ path: portPath, baudRate: 9600 }, (err) => {
-        if (err) {
-          console.error("Error opening serial port:", err.message);
-          return;
+      const newPort = await (
+        navigator as unknown as {
+          serial: { requestPort: () => Promise<SerialPort> };
         }
-        console.log("Serial port opened successfully!");
-        setPortOpen(true);
-      });
+      ).serial.requestPort(); // Prompts user to select a serial port
+      await (newPort as SerialPort).open({ baudRate: 9600 }); // Match baud rate with the Arduino
+      setPort(newPort);
 
-      // Attach a Readline parser to handle incoming data
-      const parser = globalPort.pipe(new ReadlineParser({ delimiter: "\n" }));
+      // Set up writing to the serial port
+      const textEncoder = new TextEncoderStream();
+      textEncoder.readable.pipeTo(
+        newPort.writable as unknown as WritableStream<Uint8Array>
+      );
+      globalWriter = textEncoder.writable.getWriter();
 
-      // Read data from the Arduino
-      parser.on("data", (data) => {
-        console.log("Received from Arduino:", data);
-        setRFID(data.trim()); // Update Zustand store with received value
-      });
+      // Set up reading from the serial port
+      const textDecoder = new TextDecoderStream();
+      (newPort.readable as unknown as ReadableStream<Uint8Array>).pipeTo(
+        textDecoder.writable
+      );
+      globalReader = textDecoder.readable.getReader();
 
-      // Handle port errors
-      globalPort.on("error", (err) => {
-        console.error("Serial port error:", err.message);
-      });
+      // Start reading from the serial port
+      readFromArduino();
 
-      // Handle port closure
-      globalPort.on("close", () => {
-        console.log("Serial port closed.");
-        setPortOpen(false);
-      });
+      console.log("Serial port opened successfully!");
     } catch (err) {
-      console.error("Failed to connect to Arduino:", err);
+      console.error("Failed to open serial port:", err);
     }
   };
 
-  const disconnectFromArduino = () => {
-    if (globalPort) {
-      globalPort.close((err) => {
-        if (err) {
-          console.error("Error closing serial port:", err.message);
-        } else {
-          console.log("Serial port closed successfully.");
-          setPortOpen(false);
+  const readFromArduino = async () => {
+    if (!globalReader) {
+      console.error("No reader available. Ensure the port is open.");
+      return;
+    }
+
+    try {
+      while (true) {
+        const { value, done } = await globalReader.read();
+        if (done) {
+          console.log("Reader has been closed.");
+          break;
         }
-      });
-      globalPort = null;
+        if (value) {
+          console.log(`Received from Arduino: ${value}`);
+          setIncomingData((prev) => prev + value); // Append the received data
+        }
+      }
+    } catch (err) {
+      console.error("Failed to read from Arduino:", err);
+    }
+  };
+
+  const closeSerialPort = async () => {
+    try {
+      if (globalReader) {
+        await globalReader.cancel();
+        globalReader = null;
+      }
+      if (globalWriter) {
+        await globalWriter.close();
+        globalWriter = null;
+      }
+      if (port) {
+        await (port as SerialPort).close();
+        setPort(null);
+      }
+      console.log("Serial port closed.");
+    } catch (err) {
+      console.error("Failed to close serial port:", err);
     }
   };
 
   return (
     <div>
-      {!portOpen ? (
+      {!port ? (
         <button
-          className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32 h-12"
-          onClick={connectToArduino}
+          className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32"
+          onClick={requestSerialPort}
         >
           Connect to Arduino
         </button>
       ) : (
         <button
-          className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32 h-12"
-          onClick={disconnectFromArduino}
+          className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32"
+          onClick={closeSerialPort}
         >
           Disconnect
         </button>
       )}
+      <div className="mt-4">
+        <h3 className="text-sm font-semibold">Incoming Data:</h3>
+        <pre className="bg-gray-100 p-2 rounded text-xs">{incomingData}</pre>
+      </div>
     </div>
   );
 };
