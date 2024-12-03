@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { checkId } from "../components/communication/api";
 import { useRFIDStore } from "../store/store";
+import { WebSerialCommunication } from "./communication/web_serial_com";
 
 export const LoginPage: React.FC = () => {
   const [error, setError] = useState("");
@@ -30,8 +31,9 @@ export const LoginPage: React.FC = () => {
   }, [rfid, navigate]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex flex-col w-screen h-screen items-center justify-center min-h-screen bg-gray-100">
       <div className="p-8 bg-white rounded-lg shadow-md text-center">
+        <WebSerialCommunication />
         <h1 className="text-2xl font-bold mb-6">Log ind</h1>
         <p className="text-lg mb-4">
           Test mode - TEST RFID scan med ID: {rfid.toString()}
