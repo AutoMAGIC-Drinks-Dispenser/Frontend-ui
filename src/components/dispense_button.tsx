@@ -24,23 +24,23 @@ export const SpejlaegButtonComponent: React.FC = () => {
     if (showPopup) {
       try {
         // Get the logged in user's ID
-        const userId = sessionStorage.getItem('userId');
+        const userId = sessionStorage.getItem("userId");
         if (!userId) {
-          setError('Du skal være logget ind for at bestille');
+          setError("Du skal være logget ind for at bestille");
           return;
         }
 
         // Increment the alltime counter
         await incrementAlltime(Number(userId));
-        
+
         // If increment was successful, send to Arduino
         sendDataToArduino(showPopup);
-        
+
         // Close the popup
         setShowPopup(null);
         setError("");
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Der skete en fejl');
+        setError(err instanceof Error ? err.message : "Der skete en fejl");
       }
     }
   };
@@ -70,8 +70,8 @@ export const SpejlaegButtonComponent: React.FC = () => {
         </button>
       </div>
       {showPopup && (
-        <SpejlaegPopupModal 
-          onClose={handleClosePopup} 
+        <SpejlaegPopupModal
+          onClose={handleClosePopup}
           onStart={handleStart}
           err={error} // Pass error to modal if you want to display it there
         />
