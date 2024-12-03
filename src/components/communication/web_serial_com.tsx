@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { SerialPort } from "serialport";
 
 let globalWriter: WritableStreamDefaultWriter<string> | null = null;
-let globalReader: ReadableStreamDefaultReader<string> | null = null;
+let globalReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
 
 export const sendDataToArduino = async (data: string) => {
   if (!globalWriter) {
@@ -28,8 +28,8 @@ export const WebSerialCommunication: React.FC = () => {
         navigator as unknown as {
           serial: { requestPort: () => Promise<SerialPort> };
         }
-      ).serial.requestPort(); // Prompts user to select a serial port
-      await (newPort as SerialPort).open({ baudRate: 9600 }); // Match baud rate with the Arduino
+      ).serial.requestPort();
+      await (newPort as SerialPort).open({ baudRate: 9600 }); // Ensure baud rate matches Arduino
       setPort(newPort);
 
       // Set up writing to the serial port
@@ -40,13 +40,11 @@ export const WebSerialCommunication: React.FC = () => {
       globalWriter = textEncoder.writable.getWriter();
 
       // Set up reading from the serial port
-      const textDecoder = new TextDecoderStream();
-      (newPort.readable as unknown as ReadableStream<Uint8Array>).pipeTo(
-        textDecoder.writable
-      );
-      globalReader = textDecoder.readable.getReader();
+      globalReader = (
+        newPort.readable as unknown as ReadableStream<Uint8Array>
+      ).getReader();
 
-      // Start reading from the serial port
+      // Start reading
       readFromArduino();
 
       console.log("Serial port opened successfully!");
@@ -61,6 +59,9 @@ export const WebSerialCommunication: React.FC = () => {
       return;
     }
 
+    const textDecoder = new TextDecoder(); // Initialize the decoder
+    let buffer = ""; // Buffer to accumulate data
+
     try {
       while (true) {
         const { value, done } = await globalReader.read();
@@ -69,8 +70,19 @@ export const WebSerialCommunication: React.FC = () => {
           break;
         }
         if (value) {
-          console.log(`Received from Arduino: ${value}`);
-          setIncomingData((prev) => prev + value); // Append the received data
+          // Decode and accumulate the value
+          const decodedValue = textDecoder.decode(value, { stream: true });
+          buffer += decodedValue;
+
+          // Process complete lines
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || ""; // Keep incomplete data in the buffer
+
+          for (const line of lines) {
+            const cleanedLine = line.trim(); // Clean the line
+            console.log(`Received from Arduino: ${cleanedLine}`);
+            setIncomingData((prev) => prev + cleanedLine + "\n");
+          }
         }
       }
     } catch (err) {
