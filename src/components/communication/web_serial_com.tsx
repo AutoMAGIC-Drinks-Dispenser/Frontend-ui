@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { SerialPort } from "serialport";
 
+// Global writer and reader for managing the serial port
 let globalWriter: WritableStreamDefaultWriter<string> | null = null;
 let globalReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
 
+// Function to send string data to Arduino
 export const sendDataToArduino = async (data: string) => {
   if (!globalWriter) {
     console.error("No serial writer available. Connect to the Arduino first.");
@@ -11,7 +13,7 @@ export const sendDataToArduino = async (data: string) => {
   }
 
   try {
-    await globalWriter.write(data + "\n"); // Send data with a newline character
+    await globalWriter.write(data + "\n"); // Send data as a string followed by a newline
     console.log(`Sent to Arduino: ${data}`);
   } catch (err) {
     console.error("Failed to write to Arduino:", err);
@@ -20,7 +22,7 @@ export const sendDataToArduino = async (data: string) => {
 
 export const WebSerialCommunication: React.FC = () => {
   const [port, setPort] = useState<SerialPort | null>(null);
-  const [incomingData, setIncomingData] = useState<string>("");
+  const [incomingData, setIncomingData] = useState<number | null>(null); // Store received integers
 
   const requestSerialPort = async () => {
     try {
@@ -29,7 +31,7 @@ export const WebSerialCommunication: React.FC = () => {
           serial: { requestPort: () => Promise<SerialPort> };
         }
       ).serial.requestPort();
-      await (newPort as SerialPort).open({ baudRate: 9600 }); // Ensure baud rate matches Arduino
+      await (newPort as SerialPort).open({ baudRate: 9600 }); // Match baud rate with Arduino
       setPort(newPort);
 
       // Set up writing to the serial port
@@ -59,7 +61,7 @@ export const WebSerialCommunication: React.FC = () => {
       return;
     }
 
-    const textDecoder = new TextDecoder(); // Initialize the decoder
+    const textDecoder = new TextDecoder(); // Use TextDecoder to decode Uint8Array into strings
     let buffer = ""; // Buffer to accumulate data
 
     try {
@@ -80,8 +82,15 @@ export const WebSerialCommunication: React.FC = () => {
 
           for (const line of lines) {
             const cleanedLine = line.trim(); // Clean the line
-            console.log(`Received from Arduino: ${cleanedLine}`);
-            setIncomingData((prev) => prev + cleanedLine + "\n");
+
+            // Parse integer
+            const parsedInteger = parseInt(cleanedLine, 10);
+            if (!isNaN(parsedInteger)) {
+              console.log(`Received integer from Arduino: ${parsedInteger}`);
+              setIncomingData(parsedInteger); // Update state with the received integer
+            } else {
+              console.warn(`Invalid data received: ${cleanedLine}`);
+            }
           }
         }
       }
@@ -128,8 +137,10 @@ export const WebSerialCommunication: React.FC = () => {
         </button>
       )}
       <div className="mt-4">
-        <h3 className="text-sm font-semibold">Incoming Data:</h3>
-        <pre className="bg-gray-100 p-2 rounded text-xs">{incomingData}</pre>
+        <h3 className="text-sm font-semibold">Incoming Integer:</h3>
+        <pre className="bg-gray-100 p-2 rounded text-xs">
+          {incomingData !== null ? incomingData : "No data received"}
+        </pre>
       </div>
     </div>
   );
