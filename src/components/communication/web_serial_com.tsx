@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { SerialPort } from "serialport";
+import { useRFIDStore } from "../../store/store";
 
 let globalWriter: WritableStreamDefaultWriter<string> | null = null;
 
@@ -19,6 +20,7 @@ export const sendDataToArduino = async (data: string) => {
 
 export const WebSerialCommunication: React.FC = () => {
   const [port, setPort] = useState<SerialPort | null>(null);
+  const setRFID = useRFIDStore((state) => state.setRFID);
 
   const requestSerialPort = async () => {
     try {
@@ -26,15 +28,45 @@ export const WebSerialCommunication: React.FC = () => {
         navigator as unknown as {
           serial: { requestPort: () => Promise<SerialPort> };
         }
-      ).serial.requestPort(); // Prompts user to select a serial port
-      await (newPort as SerialPort).open({ baudRate: 9600 }); // Match baud rate with the Arduino
+      ).serial.requestPort();
+      await (newPort as SerialPort).open({ baudRate: 9600 });
       setPort(newPort);
 
+      // Setup writer for sending data to Arduino
       const textEncoder = new TextEncoderStream();
       textEncoder.readable.pipeTo(
         newPort.writable as unknown as WritableStream<Uint8Array>
       );
       globalWriter = textEncoder.writable.getWriter();
+
+      // Setup reader for receiving data from Arduino
+      const textDecoder = new TextDecoderStream();
+      const readableStreamClosed = (
+        newPort.readable as unknown as ReadableStream<Uint8Array>
+      )?.pipeThrough(textDecoder);
+      if (readableStreamClosed) {
+        const reader = readableStreamClosed.getReader();
+
+        const readLoop = async () => {
+          try {
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) break;
+
+              if (value) {
+                console.log("Received from Arduino:", value);
+                setRFID(value.trim()); // Update RFID store with received value
+              }
+            }
+          } catch (err) {
+            console.error("Error reading from Arduino:", err);
+          } finally {
+            reader.releaseLock();
+          }
+        };
+
+        readLoop();
+      }
 
       console.log("Serial port opened successfully!");
     } catch (err) {
@@ -49,7 +81,7 @@ export const WebSerialCommunication: React.FC = () => {
         globalWriter = null;
       }
       if (port) {
-        await (port as SerialPort).close();
+        await port.close();
         setPort(null);
       }
       console.log("Serial port closed.");

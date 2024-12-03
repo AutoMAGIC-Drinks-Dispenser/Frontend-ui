@@ -22,3 +22,13 @@ export const useUserStore = create<UserStore>((set) => ({
       users: state.users.filter((user) => user.userID !== userID),
     })),
 }));
+
+type RFIDStore = {
+  rfid: string;
+  setRFID: (rfid: string) => void;
+};
+
+export const useRFIDStore = create<RFIDStore>((set) => ({
+  rfid: "",
+  setRFID: (rfid) => set({ rfid }),
+}));
