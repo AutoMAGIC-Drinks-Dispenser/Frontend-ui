@@ -53,7 +53,8 @@ export const WebSerialCommunication: React.FC = () => {
       const readLoop = async () => {
         try {
           while (true) {
-            const { value, done } = await reader.read();
+            const value = "rfid2251231231" + "\n";
+            const { done } = await reader.read();
             if (done) {
               console.log("Stream closed.");
               break;
