@@ -22,7 +22,7 @@ export const sendDataToArduino = async (data: string) => {
 
 export const WebSerialCommunication: React.FC = () => {
   const [port, setPort] = useState<SerialPort | null>(null);
-  const [incomingData, setIncomingData] = useState<number | null>(null); // Store received integers
+  const [incomingData, setIncomingData] = useState<string>(""); // Store received strings
 
   const requestSerialPort = async () => {
     try {
@@ -82,15 +82,8 @@ export const WebSerialCommunication: React.FC = () => {
 
           for (const line of lines) {
             const cleanedLine = line.trim(); // Clean the line
-
-            // Parse integer
-            const parsedInteger = parseInt(cleanedLine, 10);
-            if (!isNaN(parsedInteger)) {
-              console.log(`Received integer from Arduino: ${parsedInteger}`);
-              setIncomingData(parsedInteger); // Update state with the received integer
-            } else {
-              console.warn(`Invalid data received: ${cleanedLine}`);
-            }
+            console.log(`Received string from Arduino: ${cleanedLine}`);
+            setIncomingData((prev) => prev + cleanedLine + "\n"); // Append to state
           }
         }
       }
@@ -137,10 +130,8 @@ export const WebSerialCommunication: React.FC = () => {
         </button>
       )}
       <div className="mt-4">
-        <h3 className="text-sm font-semibold">Incoming Integer:</h3>
-        <pre className="bg-gray-100 p-2 rounded text-xs">
-          {incomingData !== null ? incomingData : "No data received"}
-        </pre>
+        <h3 className="text-sm font-semibold">Incoming Data:</h3>
+        <pre className="bg-gray-100 p-2 rounded text-xs">{incomingData}</pre>
       </div>
     </div>
   );
