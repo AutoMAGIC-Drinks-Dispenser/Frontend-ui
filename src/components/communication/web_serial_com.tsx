@@ -2,6 +2,7 @@ import { useState } from "react";
 import { SerialPort } from "serialport";
 
 let globalWriter: WritableStreamDefaultWriter<string> | null = null;
+let globalReader: ReadableStreamDefaultReader<string> | null = null;
 
 export const sendDataToArduino = async (data: string) => {
   if (!globalWriter) {
@@ -19,6 +20,7 @@ export const sendDataToArduino = async (data: string) => {
 
 export const WebSerialCommunication: React.FC = () => {
   const [port, setPort] = useState<SerialPort | null>(null);
+  const [receivedData, setReceivedData] = useState<string>("");
 
   const requestSerialPort = async () => {
     try {
@@ -30,13 +32,24 @@ export const WebSerialCommunication: React.FC = () => {
       await (newPort as SerialPort).open({ baudRate: 9600 }); // Match baud rate with the Arduino
       setPort(newPort);
 
+      // Setup writer for sending data
       const textEncoder = new TextEncoderStream();
       textEncoder.readable.pipeTo(
         newPort.writable as unknown as WritableStream<Uint8Array>
       );
       globalWriter = textEncoder.writable.getWriter();
 
+      // Setup reader for receiving data
+      const textDecoder = new TextDecoderStream();
+      (newPort.readable as unknown as ReadableStream<Uint8Array>).pipeTo(
+        textDecoder.writable
+      );
+      globalReader = textDecoder.readable.getReader();
+
       console.log("Serial port opened successfully!");
+
+      // Start listening for data
+      listenForData();
     } catch (err) {
       console.error("Failed to open serial port:", err);
     }
@@ -44,6 +57,11 @@ export const WebSerialCommunication: React.FC = () => {
 
   const closeSerialPort = async () => {
     try {
+      if (globalReader) {
+        await globalReader.cancel();
+        globalReader.releaseLock();
+        globalReader = null;
+      }
       if (globalWriter) {
         await globalWriter.close();
         globalWriter = null;
@@ -55,6 +73,29 @@ export const WebSerialCommunication: React.FC = () => {
       console.log("Serial port closed.");
     } catch (err) {
       console.error("Failed to close serial port:", err);
+    }
+  };
+
+  const listenForData = async () => {
+    if (!globalReader) return;
+
+    try {
+      while (true) {
+        const { value, done } = await globalReader.read();
+        if (done) {
+          console.log("Stream closed.");
+          break;
+        }
+        if (value) {
+          const received = new TextDecoder().decode(
+            value as unknown as AllowSharedBufferSource
+          );
+          setReceivedData((prev) => prev + received);
+          console.log(`Received from Arduino: ${received}`);
+        }
+      }
+    } catch (err) {
+      console.error("Error while reading from serial port:", err);
     }
   };
 
@@ -74,6 +115,12 @@ export const WebSerialCommunication: React.FC = () => {
         >
           Disconnect
         </button>
+      )}
+      {receivedData && (
+        <div className="mt-4">
+          <p className="text-sm text-gray-600">Received Data:</p>
+          <pre className="bg-gray-100 p-2 rounded">{receivedData}</pre>
+        </div>
       )}
     </div>
   );
