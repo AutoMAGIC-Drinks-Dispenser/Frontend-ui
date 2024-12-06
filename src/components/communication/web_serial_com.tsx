@@ -2,7 +2,8 @@ import { useState } from "react";
 import { SerialPort } from "serialport";
 
 let globalWriter: WritableStreamDefaultWriter<string> | null = null;
-let globalReader: ReadableStreamDefaultReader<string> | null = null;
+let globalReader: ReadableStreamDefaultReader<string | Uint8Array> | null =
+  null;
 
 export const sendDataToArduino = async (data: string) => {
   if (!globalWriter) {
@@ -86,12 +87,12 @@ export const WebSerialCommunication: React.FC = () => {
           console.log("Stream closed.");
           break;
         }
-        if (value) {
-          const received = new TextDecoder().decode(
-            value as unknown as AllowSharedBufferSource
-          );
+        if (value instanceof Uint8Array) {
+          const received = new TextDecoder().decode(value);
           setReceivedData((prev) => prev + received);
           console.log(`Received from Arduino: ${received}`);
+        } else {
+          console.error("Unexpected value type:", value);
         }
       }
     } catch (err) {
