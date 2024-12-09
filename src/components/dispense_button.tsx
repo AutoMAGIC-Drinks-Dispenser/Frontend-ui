@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { sendToArduino } from "../components/communication/api";
+import { sendToArduinoWithCheck } from "../components/communication/api";
 
 const DispenseButton: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
@@ -8,17 +8,23 @@ const DispenseButton: React.FC = () => {
   const handleDispense = async (type: "single" | "double") => {
     setError(null);
     setLoading(true);
-
+  
     try {
-      const response = await sendToArduino(type);
+      const response = await sendToArduinoWithCheck(type);
       console.log(response.message);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-      console.error("Dispense error:", err);
+      if (err instanceof Error) {
+        console.error("Dispense error:", err.message);
+        setError(err.message);
+      } else {
+        console.error("Unknown error occurred:", err);
+        setError("An unknown error occurred");
+      }
     } finally {
       setLoading(false);
     }
   };
+  
 
   return (
     <div className="flex flex-col items-center">
