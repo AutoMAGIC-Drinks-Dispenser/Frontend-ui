@@ -1,9 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SerialPort } from "serialport";
 
 let globalWriter: WritableStreamDefaultWriter<string> | null = null;
-let globalReader: ReadableStreamDefaultReader<string | Uint8Array> | null =
-  null;
 
 export const sendDataToArduino = async (data: string) => {
   if (!globalWriter) {
@@ -23,6 +21,47 @@ export const WebSerialCommunication: React.FC = () => {
   const [port, setPort] = useState<SerialPort | null>(null);
   const [receivedData, setReceivedData] = useState<string>("");
 
+  useEffect(() => {
+    let reader: ReadableStreamDefaultReader<string> | undefined;
+
+    const readSerialData = async () => {
+      if (!port) return;
+    
+      try {
+        const textDecoder = new TextDecoderStream();
+    
+        // Cast port.readable to ReadableStream<Uint8Array>
+        const readableStream = port.readable as unknown as ReadableStream<Uint8Array>;
+    
+        // Pipe the readable stream to the TextDecoderStream
+        readableStream.pipeTo(textDecoder.writable);
+    
+        const reader = textDecoder.readable.getReader();
+    
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+    
+          console.log("Received from Arduino:", value);
+          setReceivedData((prev) => prev + value); // Append new data
+        }
+    
+        reader.releaseLock();
+      } catch (err) {
+        console.error("Error reading serial data:", err);
+      }
+    };
+    
+
+    readSerialData();
+
+    return () => {
+      if (reader) {
+        reader.cancel();
+      }
+    };
+  }, [port]);
+
   const requestSerialPort = async () => {
     try {
       const newPort = await (
@@ -33,24 +72,13 @@ export const WebSerialCommunication: React.FC = () => {
       await (newPort as SerialPort).open({ baudRate: 9600 }); // Match baud rate with the Arduino
       setPort(newPort);
 
-      // Setup writer for sending data
       const textEncoder = new TextEncoderStream();
       textEncoder.readable.pipeTo(
         newPort.writable as unknown as WritableStream<Uint8Array>
       );
       globalWriter = textEncoder.writable.getWriter();
 
-      // Setup reader for receiving data
-      const textDecoder = new TextDecoderStream();
-      (newPort.readable as unknown as ReadableStream<Uint8Array>).pipeTo(
-        textDecoder.writable
-      );
-      globalReader = textDecoder.readable.getReader();
-
       console.log("Serial port opened successfully!");
-
-      // Start listening for data
-      listenForData();
     } catch (err) {
       console.error("Failed to open serial port:", err);
     }
@@ -58,11 +86,6 @@ export const WebSerialCommunication: React.FC = () => {
 
   const closeSerialPort = async () => {
     try {
-      if (globalReader) {
-        await globalReader.cancel();
-        globalReader.releaseLock();
-        globalReader = null;
-      }
       if (globalWriter) {
         await globalWriter.close();
         globalWriter = null;
@@ -74,29 +97,6 @@ export const WebSerialCommunication: React.FC = () => {
       console.log("Serial port closed.");
     } catch (err) {
       console.error("Failed to close serial port:", err);
-    }
-  };
-
-  const listenForData = async () => {
-    if (!globalReader) return;
-
-    try {
-      while (true) {
-        const { value, done } = await globalReader.read();
-        if (done) {
-          console.log("Stream closed.");
-          break;
-        }
-        if (value instanceof Uint8Array) {
-          const received = new TextDecoder().decode(value);
-          setReceivedData((prev) => prev + received);
-          console.log(`Received from Arduino: ${received}`);
-        } else {
-          console.error("Unexpected value type:", value);
-        }
-      }
-    } catch (err) {
-      console.error("Error while reading from serial port:", err);
     }
   };
 
@@ -117,12 +117,10 @@ export const WebSerialCommunication: React.FC = () => {
           Disconnect
         </button>
       )}
-      {receivedData && (
-        <div className="mt-4">
-          <p className="text-sm text-gray-600">Received Data:</p>
-          <pre className="bg-gray-100 p-2 rounded">{receivedData}</pre>
-        </div>
-      )}
+      <div>
+        <h3>Received Data:</h3>
+        <pre>{receivedData}</pre>
+      </div>
     </div>
   );
 };
