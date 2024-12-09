@@ -1,4 +1,4 @@
-import { SpejlaegButtonComponent } from "./dispense_button";
+import DispenseButton from "./dispense_button";
 import { HeaderComponent } from "./header.tsx";
 
 export const MainMenu: React.FC = () => {
@@ -7,7 +7,7 @@ export const MainMenu: React.FC = () => {
       <div>
         <HeaderComponent />
       </div>
-      <SpejlaegButtonComponent />
+      <DispenseButton />
     </div>
   );
 };
