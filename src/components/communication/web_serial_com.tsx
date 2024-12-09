@@ -1,7 +1,17 @@
 import { useState, useEffect } from "react";
-import { SerialPort } from "serialport";
 
 let globalWriter: WritableStreamDefaultWriter<string> | null = null;
+
+interface SerialPort {
+  readable: ReadableStream<Uint8Array>;
+  writable: WritableStream<Uint8Array>;
+  open: (options: { baudRate: number }) => Promise<void>;
+  close: () => Promise<void>;
+}
+
+interface SerialPortOpenOptions {
+  baudRate: number;
+}
 
 export const sendDataToArduino = async (data: string) => {
   if (!globalWriter) {
@@ -62,7 +72,7 @@ export const WebSerialCommunication: React.FC = () => {
           serial: { requestPort: () => Promise<SerialPort> };
         }
       ).serial.requestPort(); // Prompts user to select a serial port
-      await (newPort as SerialPort).open({ baudRate: 9600 }); // Match baud rate with the Arduino
+      await (newPort as SerialPort).open({ baudRate: 9600 } as SerialPortOpenOptions); // Match baud rate with the Arduino
       setPort(newPort);
 
       const textEncoder = new TextEncoderStream();
