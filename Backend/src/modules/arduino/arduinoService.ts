@@ -6,7 +6,7 @@ class ArduinoService extends EventEmitter {
   private parser: ReadlineParser | null = null;
   private autoReconnect: boolean = true;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  private readonly PORT_PATH = '/dev/serial0';
+  private readonly PORT_PATH = '/dev/ttyS0';
 
   constructor() {
     super();
