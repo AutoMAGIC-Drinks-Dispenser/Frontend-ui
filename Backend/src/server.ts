@@ -2,7 +2,7 @@
 import express from "express";
 import mysql from "mysql2/promise";
 import cors from "cors";
-import { arduinoRouter } from "./modules/arduino/arduinoRoutes";
+import router from "./modules/arduino/arduinoRoutes";
 import { arduinoService } from "./modules/arduino/arduinoService";
 
 const app = express();
@@ -32,7 +32,7 @@ pool.getConnection()
   });
 
 // Add Arduino routes
-app.use("/api/arduino", arduinoRouter);
+app.use("/api/arduino", router);
 
 // Process Arduino data
 arduinoService.on("data", async (data: string) => {

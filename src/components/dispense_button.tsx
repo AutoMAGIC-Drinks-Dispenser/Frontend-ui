@@ -1,83 +1,44 @@
 import React, { useState } from "react";
-import { SpejlaegPopupModal } from "./dispense_button_modal";
-import { incrementAlltime, sendToArduino } from "./communication/api";
+import { sendToArduino } from "../components/communication/api";
 
-export const SpejlaegButtonComponent: React.FC = () => {
-  const [showPopup, setShowPopup] = useState<"single" | "double" | null>(null);
-  const [error, setError] = useState<string>("");
+const DispenseButton: React.FC = () => {
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const handleSingleButtonClick = () => {
-    setShowPopup("single");
-  };
+  const handleDispense = async (type: "single" | "double") => {
+    setError(null);
+    setLoading(true);
 
-  const handleDoubleButtonClick = () => {
-    setShowPopup("double");
-  };
-
-  const handleClosePopup = () => {
-    setShowPopup(null);
-    setError("");
-  };
-
-  const handleStart = async () => {
-    if (showPopup) {
-      try {
-        // Get the logged in user's ID
-        const userId = sessionStorage.getItem('userId');
-        if (!userId) {
-          setError('Du skal være logget ind for at bestille');
-          return;
-        }
-
-        // First increment the alltime counter
-        await incrementAlltime(Number(userId));
-        
-        // Then send command to Arduino
-        await sendToArduino(showPopup); // This will send "single" or "double"
-        
-        // Close the popup on success
-        setShowPopup(null);
-        setError("");
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Der skete en fejl');
-        console.error('Error processing request:', err);
-      }
+    try {
+      const response = await sendToArduino(type);
+      console.log(response.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+      console.error("Dispense error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center py-20">
-      <div className="flex space-x-12">
-        <button
-          onClick={handleSingleButtonClick}
-          className="hover:bg-stone-100 focus:outline-none"
-        >
-          <img
-            src="../../src/Images/blub.png"
-            alt="Spejlæg"
-            className="flex w-52 h-52"
-          />
-        </button>
-        <button
-          onClick={handleDoubleButtonClick}
-          className="hover:bg-stone-100 focus:outline-none"
-        >
-          <img
-            src="../../src/Images/blub2.png"
-            alt="Double Spejlæg"
-            className="flex w-52 h-52"
-          />
-        </button>
-      </div>
-      {showPopup && (
-        <SpejlaegPopupModal 
-          onClose={handleClosePopup} 
-          onStart={handleStart}
-          err={error}
-        />
-      )}
+    <div className="flex flex-col items-center">
+      <button
+        onClick={() => handleDispense("single")}
+        disabled={loading}
+        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-300"
+      >
+        Dispense Single
+      </button>
+      <button
+        onClick={() => handleDispense("double")}
+        disabled={loading}
+        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:bg-gray-300 mt-2"
+      >
+        Dispense Double
+      </button>
+      {error && <p className="text-red-500 mt-2">{error}</p>}
     </div>
   );
 };
 
-export default SpejlaegButtonComponent;
+export default DispenseButton;
