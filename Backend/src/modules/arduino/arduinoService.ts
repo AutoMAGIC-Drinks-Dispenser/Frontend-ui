@@ -89,6 +89,32 @@ class ArduinoService extends EventEmitter {
   public isConnected(): boolean {
     return this.serialPort?.isOpen ?? false;
   }
+
+  // Test connection functionality
+  public async testConnection(): Promise<void> {
+    if (!this.serialPort?.isOpen) {
+      console.log("Serial port is not open. Connecting...");
+      await this.connect();
+    }
+
+    console.log("Starting test...");
+
+    // Test sending data
+    const testData = "Test message from Raspberry Pi";
+    try {
+      await this.sendData(testData);
+      console.log(`Sent test data: "${testData}"`);
+    } catch (err) {
+      console.error("Error sending test data:", err);
+    }
+
+    // Test receiving data
+    this.on("data", (receivedData) => {
+      console.log(`Test received data: "${receivedData}"`);
+    });
+
+    console.log("Test setup complete. Waiting for Arduino response...");
+  }
 }
 
 export const arduinoService = new ArduinoService();
