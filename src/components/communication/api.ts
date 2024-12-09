@@ -1,5 +1,3 @@
-// api.ts
-
 // Existing interfaces
 interface User {
   id: number;
@@ -43,9 +41,11 @@ interface ArduinoSendResponse {
   message: string;
 }
 
+// Base URL for API endpoints
 const API_BASE_URL = 'http://localhost:3000/api';
 
-// Existing functions
+// --- Database-related functions ---
+
 export async function incrementAlltime(userId: number): Promise<IncrementResponse> {
   const response = await fetch(`${API_BASE_URL}/increment-alltime/${userId}`, {
     method: 'POST'
@@ -104,7 +104,8 @@ export async function removeUser(id: number): Promise<RemoveUserResponse> {
   return response.json();
 }
 
-// New Arduino functions
+// --- Arduino-related functions ---
+
 export async function sendToArduino(data: string): Promise<ArduinoSendResponse> {
   const response = await fetch(`${API_BASE_URL}/arduino/send`, {
     method: 'POST',
@@ -138,4 +139,26 @@ export async function sendToArduinoWithCheck(data: string): Promise<ArduinoSendR
     throw new Error('Arduino is not connected');
   }
   return sendToArduino(data);
+}
+
+// --- Combined utility functions for Arduino and Database ---
+
+/**
+ * Utility to update a user in the database and send data to the Arduino.
+ * @param userId - The user ID to update.
+ * @param arduinoData - The data to send to Arduino.
+ */
+export async function updateUserAndNotifyArduino(userId: number, arduinoData: string): Promise<void> {
+  try {
+    // Increment alltime in the database
+    const incrementResponse = await incrementAlltime(userId);
+    console.log('Database updated:', incrementResponse);
+
+    // Send data to Arduino
+    const arduinoResponse = await sendToArduinoWithCheck(arduinoData);
+    console.log('Arduino notified:', arduinoResponse);
+  } catch (error) {
+    console.error('Failed to update user and notify Arduino:', error);
+    throw error;
+  }
 }

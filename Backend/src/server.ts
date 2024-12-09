@@ -1,181 +1,184 @@
 // backend/src/server.ts
-import express from 'express';
-import mysql from 'mysql2/promise';
-import cors from 'cors';
-import { arduinoRouter } from './modules/arduino/arduinoRoutes';
-import { arduinoService } from './modules/arduino/arduinoService';
+import express from "express";
+import mysql from "mysql2/promise";
+import cors from "cors";
+import { arduinoRouter } from "./modules/arduino/arduinoRoutes";
+import { arduinoService } from "./modules/arduino/arduinoService";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Database connection pool
 const pool = mysql.createPool({
-  host: '16p37.h.filess.io',
-  user: 'AUTOmagic_shadownot',
-  password: '865d3ef511c9f3d3b13d1d573d5139447b9809a1',
-  database: 'AUTOmagic_shadownot',
+  host: "16p37.h.filess.io",
+  user: "AUTOmagic_shadownot",
+  password: "865d3ef511c9f3d3b13d1d573d5139447b9809a1",
+  database: "AUTOmagic_shadownot",
   port: 3307,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
 });
 
 // Test database connection at startup
 pool.getConnection()
-  .then(connection => {
-    console.log('Database connection established successfully');
+  .then((connection) => {
+    console.log("Database connection established successfully");
     connection.release();
   })
-  .catch(err => {
-    console.error('Error connecting to database:', err);
+  .catch((err) => {
+    console.error("Error connecting to database:", err);
   });
 
 // Add Arduino routes
-app.use('/api/arduino', arduinoRouter);
+app.use("/api/arduino", arduinoRouter);
 
-// Arduino data handler
-arduinoService.on('data', async (data: string) => {
+// Process Arduino data
+arduinoService.on("data", async (data: string) => {
   try {
-    console.log('Processing Arduino data:', data);
-    
-    // Example: If the Arduino sends data in format "user:id"
-    if (data.startsWith('user:')) {
-      const userId = data.split(':')[1];
-      await pool.execute(
-        'UPDATE DB_1 SET alltime = alltime + 1 WHERE id = ?',
-        [userId]
-      );
+    console.log("Processing Arduino data:", data);
+
+    // Validate Arduino data format
+    if (!data.startsWith("user:")) {
+      console.warn(`Invalid data format received: "${data}"`);
+      return;
+    }
+
+    const parts = data.split(":");
+    if (parts.length !== 2) {
+      console.warn(`Malformed data received: "${data}"`);
+      return;
+    }
+
+    const userId = parts[1];
+
+    // Update user alltime count in the database
+    const [result] = await pool.execute(
+      "UPDATE DB_1 SET alltime = alltime + 1 WHERE id = ?",
+      [userId]
+    );
+
+    if ((result as mysql.ResultSetHeader).affectedRows > 0) {
       console.log(`Updated alltime counter for user ${userId}`);
+    } else {
+      console.warn(`User ID ${userId} not found in the database.`);
     }
   } catch (error) {
-    console.error('Error processing Arduino data:', error);
+    console.error("Error processing Arduino data:", error);
   }
 });
 
 // Test endpoint
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Backend is running!' });
+app.get("/api/test", (req, res) => {
+  res.json({ message: "Backend is running!" });
 });
 
 // Get all users
-app.get('/api/users', async (req, res) => {
+app.get("/api/users", async (req, res) => {
   try {
     const [rows] = await pool.execute<mysql.RowDataPacket[]>(
-      'SELECT id, username FROM DB_1'
+      "SELECT id, username FROM DB_1"
     );
     res.json(rows);
   } catch (err) {
-    const error = err as Error;
-    res.status(500).json({ error: error.message || 'Database error' });
+    res.status(500).json({ error: "Database error" });
   }
 });
 
 // Increment alltime counter
-app.post('/api/increment-alltime/:id', async (req, res) => {
+app.post("/api/increment-alltime/:id", async (req, res) => {
   try {
     const [result] = await pool.execute<mysql.ResultSetHeader>(
-      'UPDATE DB_1 SET alltime = alltime + 1 WHERE id = ?',
+      "UPDATE DB_1 SET alltime = alltime + 1 WHERE id = ?",
       [req.params.id]
     );
-    
+
     if (result.affectedRows > 0) {
       const [rows] = await pool.execute<mysql.RowDataPacket[]>(
-        'SELECT alltime FROM DB_1 WHERE id = ?',
+        "SELECT alltime FROM DB_1 WHERE id = ?",
         [req.params.id]
       );
-      
-      res.json({ 
-        success: true, 
-        message: 'Alltime incremented successfully',
-        newValue: rows[0].alltime
+      res.json({
+        success: true,
+        message: "Alltime incremented successfully",
+        newValue: rows[0].alltime,
       });
     } else {
-      res.status(404).json({ error: 'User not found' });
+      res.status(404).json({ error: "User not found" });
     }
   } catch (err) {
-    const error = err as Error;
-    res.status(500).json({ error: error.message || 'Database error' });
+    res.status(500).json({ error: "Database error" });
   }
 });
 
 // Database test endpoint
-app.get('/api/db-test', async (req, res) => {
+app.get("/api/db-test", async (req, res) => {
   try {
-    const [rows] = await pool.execute('SELECT 1');
-    res.json({ 
-      success: true, 
-      message: 'Database connection successful',
-      result: rows 
+    const [rows] = await pool.execute("SELECT 1");
+    res.json({
+      success: true,
+      message: "Database connection successful",
+      result: rows,
     });
   } catch (err) {
-    console.error('Database test error:', err);
-    res.status(500).json({ 
-      success: false, 
-      error: err instanceof Error ? err.message : 'Unknown database error'
-    });
+    res.status(500).json({ error: "Database error" });
   }
 });
 
 // Check if ID exists in database
-app.get('/api/check-id/:id', async (req, res) => {
+app.get("/api/check-id/:id", async (req, res) => {
   try {
     const [rows] = await pool.execute<mysql.RowDataPacket[]>(
-      'SELECT username FROM DB_1 WHERE id = ?',
+      "SELECT username FROM DB_1 WHERE id = ?",
       [req.params.id]
     );
-    
+
     if (rows.length > 0) {
-      res.json({ exists: true, username: rows[0].username as string });
+      res.json({ exists: true, username: rows[0].username });
     } else {
       res.json({ exists: false });
     }
   } catch (err) {
-    const error = err as Error;
-    res.status(500).json({ error: error.message || 'Database error' });
+    res.status(500).json({ error: "Database error" });
   }
 });
 
 // Add new user
-app.post('/api/add-user', async (req, res) => {
+app.post("/api/add-user", async (req, res) => {
   const { username } = req.body;
-  
+
   try {
     const [result] = await pool.execute<mysql.ResultSetHeader>(
-      'INSERT INTO DB_1 (username) VALUES (?)',
+      "INSERT INTO DB_1 (username) VALUES (?)",
       [username]
     );
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       id: result.insertId,
-      message: 'User added successfully'
+      message: "User added successfully",
     });
   } catch (err) {
-    const error = err as Error & { code?: string };
-    if (error.code === 'ER_DUP_ENTRY') {
-      res.status(400).json({ error: 'Username already exists' });
-    } else {
-      res.status(500).json({ error: error.message || 'Database error' });
-    }
+    res.status(500).json({ error: "Database error" });
   }
 });
 
 // Remove user
-app.delete('/api/remove-user/:id', async (req, res) => {
+app.delete("/api/remove-user/:id", async (req, res) => {
   try {
     const [result] = await pool.execute<mysql.ResultSetHeader>(
-      'DELETE FROM DB_1 WHERE id = ?',
+      "DELETE FROM DB_1 WHERE id = ?",
       [req.params.id]
     );
-    
+
     if (result.affectedRows > 0) {
-      res.json({ success: true, message: 'User removed successfully' });
+      res.json({ success: true, message: "User removed successfully" });
     } else {
-      res.status(404).json({ error: 'User not found' });
+      res.status(404).json({ error: "User not found" });
     }
   } catch (err) {
-    const error = err as Error;
-    res.status(500).json({ error: error.message || 'Database error' });
+    res.status(500).json({ error: "Database error" });
   }
 });
 
@@ -185,12 +188,12 @@ const server = app.listen(PORT, () => {
 });
 
 // Handle server shutdown gracefully
-process.on('SIGINT', async () => {
-  console.log('Shutting down server...');
+process.on("SIGINT", async () => {
+  console.log("Shutting down server...");
   await arduinoService.disconnect();
   await pool.end();
   server.close(() => {
-    console.log('Server shut down complete');
+    console.log("Server shut down complete");
     process.exit(0);
   });
 });

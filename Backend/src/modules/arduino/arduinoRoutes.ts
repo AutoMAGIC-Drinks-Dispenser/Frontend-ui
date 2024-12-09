@@ -1,34 +1,31 @@
-// backend/src/modules/arduino/arduinoRoutes.ts
-import { Router } from 'express';
-import { arduinoService } from './arduinoService';
+import { Router } from "express";
+import { arduinoService } from "./arduinoService";
 
 const router = Router();
 
-// Get Arduino connection status
-router.get('/status', (req, res) => {
-  res.json({ 
-    connected: arduinoService.isConnected(),
-    message: arduinoService.isConnected() ? 'Arduino is connected' : 'Arduino is disconnected'
+// Route: Check Arduino status
+router.get("/status", (req, res) => {
+  const connected = arduinoService.isConnected();
+  res.json({
+    connected,
+    message: connected ? "Arduino is connected" : "Arduino is disconnected",
   });
 });
 
-// Send data to Arduino
-router.post('/send', async (req, res) => {
+// Route: Send data to Arduino
+router.post("/send", async (req, res) => {
   const { data } = req.body;
-  
+
   if (!data) {
-    return res.status(400).json({ error: 'No data provided' });
+    return res.status(400).json({ error: "No data provided." });
   }
 
   try {
     await arduinoService.sendData(data);
-    res.json({ 
-      success: true, 
-      message: `Data "${data}" sent to Arduino successfully` 
-    });
+    res.json({ success: true, message: `Data "${data}" sent to Arduino.` });
   } catch (error) {
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Failed to send data to Arduino' 
+    res.status(500).json({
+      error: error instanceof Error ? error.message : "Failed to send data.",
     });
   }
 });
