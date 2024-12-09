@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { SpejlaegPopupModal } from "./dispense_button_modal";
-import { incrementAlltime, sendToArduino } from "./communication/api";
+import { sendDataToArduino } from "./communication/web_serial_com";
+import { incrementAlltime } from "./communication/api"; // Add this import
 
 export const SpejlaegButtonComponent: React.FC = () => {
   const [showPopup, setShowPopup] = useState<"single" | "double" | null>(null);
@@ -29,18 +30,17 @@ export const SpejlaegButtonComponent: React.FC = () => {
           return;
         }
 
-        // First increment the alltime counter
+        // Increment the alltime counter
         await incrementAlltime(Number(userId));
         
-        // Then send command to Arduino
-        await sendToArduino(showPopup); // This will send "single" or "double"
+        // If increment was successful, send to Arduino
+        sendDataToArduino(showPopup);
         
-        // Close the popup on success
+        // Close the popup
         setShowPopup(null);
         setError("");
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Der skete en fejl');
-        console.error('Error processing request:', err);
       }
     }
   };
@@ -73,7 +73,7 @@ export const SpejlaegButtonComponent: React.FC = () => {
         <SpejlaegPopupModal 
           onClose={handleClosePopup} 
           onStart={handleStart}
-          err={error}
+          err={error} // Pass error to modal if you want to display it there
         />
       )}
     </div>
