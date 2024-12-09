@@ -1,14 +1,35 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { sendToArduinoWithCheck } from "../components/communication/api";
 
 const DispenseButton: React.FC = () => {
+  const [arduinoData, setArduinoData] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    const ws = new WebSocket('ws://localhost:8080');
+
+    ws.onmessage = (event) => {
+      setArduinoData(event.data);
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket connection closed');
+    };
+
+    ws.onerror = (event) => {
+      console.error('WebSocket error:', event);
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, []);
 
   const handleDispense = async (type: "single" | "double") => {
     setError(null);
     setLoading(true);
-  
+
     try {
       const response = await sendToArduinoWithCheck(type);
       console.log(response.message);
@@ -24,7 +45,6 @@ const DispenseButton: React.FC = () => {
       setLoading(false);
     }
   };
-  
 
   return (
     <div className="flex flex-col items-center">
@@ -43,6 +63,7 @@ const DispenseButton: React.FC = () => {
         Dispense Double
       </button>
       {error && <p className="text-red-500 mt-2">{error}</p>}
+      {arduinoData && <p className="text-blue-500 mt-2">Arduino Data: {arduinoData}</p>}
     </div>
   );
 };

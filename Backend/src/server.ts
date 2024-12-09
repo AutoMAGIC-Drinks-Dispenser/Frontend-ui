@@ -1,9 +1,10 @@
-// backend/src/server.ts
 import express from "express";
 import mysql from "mysql2/promise";
 import cors from "cors";
 import router from "./modules/arduino/arduinoRoutes";
 import { arduinoService } from "./modules/arduino/arduinoService";
+import WebSocket from 'ws';
+import http from 'http';
 
 const app = express();
 app.use(cors());
@@ -64,6 +65,13 @@ arduinoService.on("data", async (data: string) => {
     } else {
       console.warn(`User ID ${userId} not found in the database.`);
     }
+
+    // Broadcast data to all connected WebSocket clients
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(data);
+      }
+    });
   } catch (error) {
     console.error("Error processing Arduino data:", error);
   }
@@ -185,6 +193,17 @@ app.delete("/api/remove-user/:id", async (req, res) => {
 const PORT = 3000;
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+// Set up WebSocket server
+const wss = new WebSocket.Server({ port: 8080 });
+
+wss.on('connection', (ws) => {
+  console.log('Client connected');
+
+  ws.on('close', () => {
+    console.log('Client disconnected');
+  });
 });
 
 // Handle server shutdown gracefully
