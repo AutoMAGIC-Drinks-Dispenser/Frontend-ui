@@ -22,43 +22,36 @@ export const WebSerialCommunication: React.FC = () => {
   const [receivedData, setReceivedData] = useState<string>("");
 
   useEffect(() => {
-    let reader: ReadableStreamDefaultReader<string> | undefined;
+    let reader: ReadableStreamDefaultReader<string> | null = null;
 
     const readSerialData = async () => {
       if (!port) return;
-    
+
       try {
         const textDecoder = new TextDecoderStream();
-    
-        // Cast port.readable to ReadableStream<Uint8Array>
-        const readableStream = port.readable as unknown as ReadableStream<Uint8Array>;
-    
-        // Pipe the readable stream to the TextDecoderStream
-        readableStream.pipeTo(textDecoder.writable);
-    
-        const reader = textDecoder.readable.getReader();
-    
+        ((port.readable as unknown) as ReadableStream<Uint8Array>).pipeTo(
+          textDecoder.writable
+        );
+        reader = textDecoder.readable.getReader();
+
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
-    
+
           console.log("Received from Arduino:", value);
           setReceivedData((prev) => prev + value); // Append new data
         }
-    
-        reader.releaseLock();
       } catch (err) {
         console.error("Error reading serial data:", err);
+      } finally {
+        reader?.releaseLock();
       }
     };
-    
 
     readSerialData();
 
     return () => {
-      if (reader) {
-        reader.cancel();
-      }
+      reader?.cancel();
     };
   }, [port]);
 
