@@ -6,8 +6,7 @@ class ArduinoService extends EventEmitter {
   private parser: ReadlineParser | null = null;
   private autoReconnect: boolean = true;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  private readonly PORT_PATH = '/dev/ttyACM0'; // Default Arduino path on RPi
-  private readonly BACKUP_PORT_PATH = '/dev/ttyUSB0'; // Backup path
+  private readonly PORT_PATH = '/dev/serial0';
 
   constructor() {
     super();
@@ -16,18 +15,12 @@ class ArduinoService extends EventEmitter {
 
   private async init() {
     try {
-      // Try to list available ports
-      const ports = await SerialPort.list();
-      console.log('Available ports:', ports);
-
-      // Find Arduino port
-      const portPath = ports.find(port => 
-        port.manufacturer?.toLowerCase().includes('arduino') ||
-        port.vendorId?.toLowerCase().includes('2341'))?.path || this.PORT_PATH;
-
       this.serialPort = new SerialPort({
-        path: portPath,
+        path: this.PORT_PATH,
         baudRate: 9600,
+        dataBits: 8,
+        parity: 'none',
+        stopBits: 1
       });
 
       this.parser = new ReadlineParser();
@@ -42,24 +35,24 @@ class ArduinoService extends EventEmitter {
       });
 
       this.serialPort.on('open', () => {
-        console.log(`Arduino connection established on ${portPath}`);
+        console.log('UART connection established on /dev/serial0');
         this.emit('connected');
       });
 
       this.serialPort.on('error', (error) => {
-        console.error('Arduino error:', error);
+        console.error('UART error:', error);
         this.emit('error', error);
         this.handleDisconnect();
       });
 
       this.serialPort.on('close', () => {
-        console.log('Arduino connection closed');
+        console.log('UART connection closed');
         this.emit('disconnected');
         this.handleDisconnect();
       });
 
     } catch (error) {
-      console.error('Failed to initialize Arduino connection:', error);
+      console.error('Failed to initialize UART connection:', error);
       this.handleDisconnect();
     }
   }
@@ -67,7 +60,7 @@ class ArduinoService extends EventEmitter {
   private handleDisconnect() {
     if (this.autoReconnect && !this.reconnectTimer) {
       this.reconnectTimer = setTimeout(() => {
-        console.log('Attempting to reconnect to Arduino...');
+        console.log('Attempting to reconnect UART...');
         this.init();
         this.reconnectTimer = null;
       }, 5000);
@@ -77,16 +70,16 @@ class ArduinoService extends EventEmitter {
   public async sendData(data: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       if (!this.serialPort?.isOpen) {
-        reject(new Error('Arduino is not connected'));
+        reject(new Error('UART is not connected'));
         return;
       }
 
       this.serialPort.write(`${data}\n`, (error) => {
         if (error) {
-          console.error('Failed to send data to Arduino:', error);
+          console.error('Failed to send data over UART:', error);
           reject(error);
         } else {
-          console.log('Sent to Arduino:', data);
+          console.log('Sent over UART:', data);
           resolve(true);
         }
       });
