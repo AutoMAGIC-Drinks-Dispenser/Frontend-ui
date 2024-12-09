@@ -1,4 +1,3 @@
-// backend/src/modules/arduino/arduinoService.ts
 import { SerialPort, ReadlineParser } from 'serialport';
 import { EventEmitter } from 'events';
 
@@ -7,23 +6,33 @@ class ArduinoService extends EventEmitter {
   private parser: ReadlineParser | null = null;
   private autoReconnect: boolean = true;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly PORT_PATH = '/dev/ttyACM0'; // Default Arduino path on RPi
+  private readonly BACKUP_PORT_PATH = '/dev/ttyUSB0'; // Backup path
 
   constructor() {
     super();
     this.init();
   }
 
-  private init() {
+  private async init() {
     try {
+      // Try to list available ports
+      const ports = await SerialPort.list();
+      console.log('Available ports:', ports);
+
+      // Find Arduino port
+      const portPath = ports.find(port => 
+        port.manufacturer?.toLowerCase().includes('arduino') ||
+        port.vendorId?.toLowerCase().includes('2341'))?.path || this.PORT_PATH;
+
       this.serialPort = new SerialPort({
-        path: this.serialPort,
+        path: portPath,
         baudRate: 9600,
       });
 
       this.parser = new ReadlineParser();
       this.serialPort.pipe(this.parser);
 
-      // Listen for incoming data from Arduino
       this.parser.on('data', (data: string) => {
         const cleanData = data.trim();
         if (cleanData) {
@@ -32,9 +41,8 @@ class ArduinoService extends EventEmitter {
         }
       });
 
-      // Handle connection events
       this.serialPort.on('open', () => {
-        console.log('Arduino connection established');
+        console.log(`Arduino connection established on ${portPath}`);
         this.emit('connected');
       });
 
