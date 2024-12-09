@@ -2,6 +2,8 @@
 import express from 'express';
 import mysql from 'mysql2/promise';
 import cors from 'cors';
+import { arduinoRouter } from './modules/arduino/arduinoRoutes';
+import { arduinoService } from './modules/arduino/arduinoService';
 
 const app = express();
 app.use(cors());
@@ -18,7 +20,7 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// Test database forbindelsen ved startup
+// Test database connection at startup
 pool.getConnection()
   .then(connection => {
     console.log('Database connection established successfully');
@@ -28,6 +30,27 @@ pool.getConnection()
     console.error('Error connecting to database:', err);
   });
 
+// Add Arduino routes
+app.use('/api/arduino', arduinoRouter);
+
+// Arduino data handler
+arduinoService.on('data', async (data: string) => {
+  try {
+    console.log('Processing Arduino data:', data);
+    
+    // Example: If the Arduino sends data in format "user:id"
+    if (data.startsWith('user:')) {
+      const userId = data.split(':')[1];
+      await pool.execute(
+        'UPDATE DB_1 SET alltime = alltime + 1 WHERE id = ?',
+        [userId]
+      );
+      console.log(`Updated alltime counter for user ${userId}`);
+    }
+  } catch (error) {
+    console.error('Error processing Arduino data:', error);
+  }
+});
 
 // Test endpoint
 app.get('/api/test', (req, res) => {
@@ -40,7 +63,6 @@ app.get('/api/users', async (req, res) => {
     const [rows] = await pool.execute<mysql.RowDataPacket[]>(
       'SELECT id, username FROM DB_1'
     );
-    
     res.json(rows);
   } catch (err) {
     const error = err as Error;
@@ -48,6 +70,7 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
+// Increment alltime counter
 app.post('/api/increment-alltime/:id', async (req, res) => {
   try {
     const [result] = await pool.execute<mysql.ResultSetHeader>(
@@ -56,7 +79,6 @@ app.post('/api/increment-alltime/:id', async (req, res) => {
     );
     
     if (result.affectedRows > 0) {
-      // Get updated alltime value
       const [rows] = await pool.execute<mysql.RowDataPacket[]>(
         'SELECT alltime FROM DB_1 WHERE id = ?',
         [req.params.id]
@@ -76,6 +98,7 @@ app.post('/api/increment-alltime/:id', async (req, res) => {
   }
 });
 
+// Database test endpoint
 app.get('/api/db-test', async (req, res) => {
   try {
     const [rows] = await pool.execute('SELECT 1');
@@ -157,6 +180,17 @@ app.delete('/api/remove-user/:id', async (req, res) => {
 });
 
 const PORT = 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+// Handle server shutdown gracefully
+process.on('SIGINT', async () => {
+  console.log('Shutting down server...');
+  await arduinoService.disconnect();
+  await pool.end();
+  server.close(() => {
+    console.log('Server shut down complete');
+    process.exit(0);
+  });
 });
