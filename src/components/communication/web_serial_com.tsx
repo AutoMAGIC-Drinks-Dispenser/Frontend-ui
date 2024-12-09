@@ -1,17 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { SerialPort } from "serialport";
 
 let globalWriter: WritableStreamDefaultWriter<string> | null = null;
-
-interface SerialPort {
-  readable: ReadableStream<Uint8Array>;
-  writable: WritableStream<Uint8Array>;
-  open: (options: { baudRate: number }) => Promise<void>;
-  close: () => Promise<void>;
-}
-
-interface SerialPortOpenOptions {
-  baudRate: number;
-}
 
 export const sendDataToArduino = async (data: string) => {
   if (!globalWriter) {
@@ -29,41 +19,6 @@ export const sendDataToArduino = async (data: string) => {
 
 export const WebSerialCommunication: React.FC = () => {
   const [port, setPort] = useState<SerialPort | null>(null);
-  const [receivedData, setReceivedData] = useState<string>("");
-
-  useEffect(() => {
-    let reader: ReadableStreamDefaultReader<string> | null = null;
-
-    const readSerialData = async () => {
-      if (!port) return;
-
-      try {
-        const textDecoder = new TextDecoderStream();
-        ((port.readable as unknown) as ReadableStream<Uint8Array>).pipeTo(
-          textDecoder.writable
-        );
-        reader = textDecoder.readable.getReader();
-
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-
-          console.log("Received from Arduino:", value);
-          setReceivedData((prev) => prev + value); // Append new data
-        }
-      } catch (err) {
-        console.error("Error reading serial data:", err);
-      } finally {
-        reader?.releaseLock();
-      }
-    };
-
-    readSerialData();
-
-    return () => {
-      reader?.cancel();
-    };
-  }, [port]);
 
   const requestSerialPort = async () => {
     try {
@@ -72,7 +27,7 @@ export const WebSerialCommunication: React.FC = () => {
           serial: { requestPort: () => Promise<SerialPort> };
         }
       ).serial.requestPort(); // Prompts user to select a serial port
-      await (newPort as SerialPort).open({ baudRate: 9600 } as SerialPortOpenOptions); // Match baud rate with the Arduino
+      await (newPort as SerialPort).open({ baudRate: 9600 }); // Match baud rate with the Arduino
       setPort(newPort);
 
       const textEncoder = new TextEncoderStream();
@@ -120,10 +75,6 @@ export const WebSerialCommunication: React.FC = () => {
           Disconnect
         </button>
       )}
-      <div>
-        <h3>Received Data:</h3>
-        <pre>{receivedData}</pre>
-      </div>
     </div>
   );
 };
