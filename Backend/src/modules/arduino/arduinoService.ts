@@ -16,7 +16,7 @@ class ArduinoService extends EventEmitter {
   private init() {
     try {
       this.serialPort = new SerialPort({
-        path: '/dev/ttyACM0', // Adjust based on your RPi's Arduino port
+        path: this.serialPort,
         baudRate: 9600,
       });
 
