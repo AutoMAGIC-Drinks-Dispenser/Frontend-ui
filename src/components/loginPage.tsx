@@ -55,7 +55,6 @@ export const LoginPage: React.FC = () => {
         {error && (
           <div>
             <div className="p-3 bg-red-100 text-red-700 rounded mt-4">
-              {error}
             </div>
             <div className="mt-4">
               <WebSerialCommunication />
