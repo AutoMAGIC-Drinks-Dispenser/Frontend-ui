@@ -4,14 +4,8 @@ import { EventEmitter } from 'events';
 class ArduinoService extends EventEmitter {
   private serialPort: SerialPort | null = null;
   private parser: ReadlineParser | null = null;
-  private autoReconnect: boolean = true;
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  private readonly POSSIBLE_PORTS = [
-    '/dev/ttyACM0',  // Most common for Arduino Mega
-    '/dev/ttyUSB0',  // USB adapter
-    '/dev/ttyS0',    // Hardware serial
-  ];
-  private currentPortIndex = 0;
+  private readonly PORT_PATH = '/dev/ttyS0';
+  private readonly BAUD_RATE = 9600;
 
   constructor() {
     super();
@@ -20,41 +14,15 @@ class ArduinoService extends EventEmitter {
 
   private async init() {
     try {
-      for (let i = 0; i < this.POSSIBLE_PORTS.length; i++) {
-        try {
-          const portPath = this.POSSIBLE_PORTS[i];
-          console.log(`Attempting to connect to ${portPath}...`);
-          
-          this.serialPort = new SerialPort({
-            path: portPath,
-            baudRate: 9600,
-            autoOpen: false  // Don't open immediately
-          });
-
-          await new Promise<void>((resolve, reject) => {
-            this.serialPort!.open((err) => {
-              if (err) {
-                console.log(`Failed to open ${portPath}:`, err.message);
-                reject(err);
-              } else {
-                console.log(`Successfully connected to ${portPath}`);
-                resolve();
-              }
-            });
-          });
-
-          this.currentPortIndex = i;
-          break;
-        } catch (err) {
-          console.log(`Failed to connect to port ${this.POSSIBLE_PORTS[i]}`);
-          if (i === this.POSSIBLE_PORTS.length - 1) {
-            throw new Error('No available ports found');
-          }
-        }
-      }
+      console.log(`Connecting to ${this.PORT_PATH}...`);
+      
+      this.serialPort = new SerialPort({
+        path: this.PORT_PATH,
+        baudRate: this.BAUD_RATE,
+      });
 
       this.parser = new ReadlineParser();
-      this.serialPort!.pipe(this.parser);
+      this.serialPort.pipe(this.parser);
 
       this.parser.on('data', (data: string) => {
         const cleanData = data.trim();
@@ -65,52 +33,39 @@ class ArduinoService extends EventEmitter {
         }
       });
 
-      this.serialPort!.on('open', () => {
-        console.log('UART connection established on /dev/serial0');
+      this.serialPort.on('open', () => {
+        console.log('Serial connection established on', this.PORT_PATH);
         this.emit('connected');
       });
 
-      this.serialPort!.on('error', (error) => {
-        console.error('UART error:', error);
+      this.serialPort.on('error', (error) => {
+        console.error('Serial error:', error);
         this.emit('error', error);
-        this.handleDisconnect();
       });
 
-      this.serialPort!.on('close', () => {
-        console.log('UART connection closed');
+      this.serialPort.on('close', () => {
+        console.log('Serial connection closed');
         this.emit('disconnected');
-        this.handleDisconnect();
       });
 
     } catch (error) {
-      console.error('Failed to initialize UART connection:', error);
-      this.handleDisconnect();
-    }
-  }
-
-  private handleDisconnect() {
-    if (this.autoReconnect && !this.reconnectTimer) {
-      this.reconnectTimer = setTimeout(() => {
-        console.log('Attempting to reconnect UART...');
-        this.init();
-        this.reconnectTimer = null;
-      }, 5000);
+      console.error('Failed to initialize serial connection:', error);
     }
   }
 
   public async sendData(data: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       if (!this.serialPort?.isOpen) {
-        reject(new Error('UART is not connected'));
+        reject(new Error('Serial port is not connected'));
         return;
       }
 
       this.serialPort.write(`${data}\n`, (error) => {
         if (error) {
-          console.error('Failed to send data over UART:', error);
+          console.error('Failed to send data:', error);
           reject(error);
         } else {
-          console.log('Sent over UART:', data);
+          console.log('Sent:', data);
           resolve(true);
         }
       });
@@ -119,23 +74,6 @@ class ArduinoService extends EventEmitter {
 
   public isConnected(): boolean {
     return this.serialPort?.isOpen ?? false;
-  }
-
-  public async disconnect(): Promise<void> {
-    this.autoReconnect = false;
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-
-    if (this.serialPort?.isOpen) {
-      await new Promise<void>((resolve, reject) => {
-        this.serialPort!.close((error) => {
-          if (error) reject(error);
-          else resolve();
-        });
-      });
-    }
   }
 
   public getCurrentPort(): string | null {
