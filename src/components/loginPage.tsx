@@ -24,7 +24,6 @@ export const LoginPage: React.FC = () => {
           const result = await checkId(Number(rfidData));
           if (result.exists) {
             sessionStorage.setItem('userId', rfidData);
-            navigate('/main');
           } else {
             setError('ID ikke genkendt');
             setTimeout(() => setError(''), 3000);
@@ -54,7 +53,7 @@ export const LoginPage: React.FC = () => {
         <p className="text-lg mb-4">*          Scan RFID chip          *</p>
         {error && (
           <div>
-            <div className="p-3 bg-red-100 text-red-700 rounded mt-4">
+            <div>
             </div>
             <div className="mt-4">
               <WebSerialCommunication />
