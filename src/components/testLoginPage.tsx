@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { checkId } from '../components/communication/api';
 import { useUserStore } from '../store/store';
+import { WebSerialCommunication } from '../components/communication/web_serial_com';
 
 export const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
@@ -72,6 +73,9 @@ export const LoginPage: React.FC = () => {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <div className="p-8 bg-white rounded-lg shadow-md text-center">
         <h1 className="text-2xl font-bold mb-6">Log ind</h1>
+        <div className="mb-4">
+          <WebSerialCommunication />
+        </div>
         <p className="text-lg mb-4">
           {lastScannedRFID 
             ? `Sidste scannede RFID: ${lastScannedRFID}` 

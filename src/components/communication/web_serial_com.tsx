@@ -1,79 +1,60 @@
 import { useState } from "react";
-import { SerialPort } from "serialport";
-
-let globalWriter: WritableStreamDefaultWriter<string> | null = null;
-
-export const sendDataToArduino = async (data: string) => {
-  if (!globalWriter) {
-    console.error("No serial writer available. Connect to the Arduino first.");
-    return;
-  }
-
-  try {
-    await globalWriter.write(data + "\n"); // Send data with a newline character
-    console.log(`Sent to Arduino: ${data}`);
-  } catch (err) {
-    console.error("Failed to write to Arduino:", err);
-  }
-};
 
 export const WebSerialCommunication: React.FC = () => {
-  const [port, setPort] = useState<SerialPort | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [error, setError] = useState('');
 
-  const requestSerialPort = async () => {
+  const handleConnect = async () => {
     try {
-      const newPort = await (
-        navigator as unknown as {
-          serial: { requestPort: () => Promise<SerialPort> };
-        }
-      ).serial.requestPort(); // Prompts user to select a serial port
-      await (newPort as SerialPort).open({ baudRate: 9600 }); // Match baud rate with the Arduino
-      setPort(newPort);
-
-      const textEncoder = new TextEncoderStream();
-      textEncoder.readable.pipeTo(
-        newPort.writable as unknown as WritableStream<Uint8Array>
-      );
-      globalWriter = textEncoder.writable.getWriter();
-
-      console.log("Serial port opened successfully!");
+      const response = await fetch('http://localhost:3000/api/arduino/connect', {
+        method: 'POST'
+      });
+      
+      if (!response.ok) throw new Error('Failed to connect to Arduino');
+      
+      setIsConnected(true);
+      setError('');
     } catch (err) {
-      console.error("Failed to open serial port:", err);
+      setError('Could not connect to Arduino');
+      console.error('Connection error:', err);
     }
   };
 
-  const closeSerialPort = async () => {
+  const handleDisconnect = async () => {
     try {
-      if (globalWriter) {
-        await globalWriter.close();
-        globalWriter = null;
-      }
-      if (port) {
-        await (port as SerialPort).close();
-        setPort(null);
-      }
-      console.log("Serial port closed.");
+      const response = await fetch('http://localhost:3000/api/arduino/disconnect', {
+        method: 'POST'
+      });
+      
+      if (!response.ok) throw new Error('Failed to disconnect from Arduino');
+      
+      setIsConnected(false);
+      setError('');
     } catch (err) {
-      console.error("Failed to close serial port:", err);
+      setError('Could not disconnect from Arduino');
+      console.error('Disconnection error:', err);
     }
   };
 
   return (
     <div>
-      {!port ? (
+      {!isConnected ? (
         <button
-          className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32 h-12"
-          onClick={requestSerialPort}
+          className="bg-blue-500 text-white px-4 py-2 rounded mb-4 hover:bg-blue-600"
+          onClick={handleConnect}
         >
-          Connect to Arduino
+          Connect Arduino
         </button>
       ) : (
         <button
-          className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32 h-12"
-          onClick={closeSerialPort}
+          className="bg-red-500 text-white px-4 py-2 rounded mb-4 hover:bg-red-600"
+          onClick={handleDisconnect}
         >
-          Disconnect
+          Disconnect Arduino
         </button>
+      )}
+      {error && (
+        <div className="text-red-500 text-sm">{error}</div>
       )}
     </div>
   );

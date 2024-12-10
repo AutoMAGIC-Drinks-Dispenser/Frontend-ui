@@ -97,6 +97,10 @@ class ArduinoService extends EventEmitter {
   public isConnected(): boolean {
     return this.serialPort?.isOpen ?? false;
   }
+
+  public getCurrentPort(): string | null {
+    return this.serialPort?.path ?? null;
+  }
 }
 
 export const arduinoService = new ArduinoService();
