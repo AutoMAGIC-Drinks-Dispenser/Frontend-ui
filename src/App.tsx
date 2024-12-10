@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { MainMenu } from './components/main_menu';
 import "./App.css";
 import "./index.css";
-import { LoginPage } from './components/testLoginPage';
+import { LoginPage } from './components/loginPage';
 
 // Auth guard component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
