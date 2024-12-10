@@ -4,6 +4,7 @@ import mysql from 'mysql2/promise';
 import cors from 'cors';
 import WebSocket from 'ws';
 import { arduinoService } from './modules/arduino/arduinoService';
+import { SerialPort } from 'serialport';
 
 const app = express();
 app.use(cors());
@@ -173,6 +174,20 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     arduinoService.off('rfid', rfidHandler);
   });
+});
+
+// Add this endpoint
+app.get('/api/serial-ports', async (req, res) => {
+  try {
+    const ports = await SerialPort.list();
+    res.json({ 
+      ports,
+      currentPort: arduinoService.getCurrentPort(),
+      isConnected: arduinoService.isConnected()
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to list serial ports' });
+  }
 });
 
 const PORT = 3000;
