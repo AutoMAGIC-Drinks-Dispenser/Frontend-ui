@@ -6,44 +6,66 @@ import { useUserStore } from '../store/store';
 
 export const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
+  const [wsStatus, setWsStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
   const navigate = useNavigate();
   const { lastScannedRFID, setLastScannedRFID } = useUserStore();
 
   useEffect(() => {
-    // Setup WebSocket connection
-    const ws = new WebSocket('ws://localhost:8080');
+    let ws: WebSocket;
+    let reconnectTimer: ReturnType<typeof setTimeout>;
 
-    ws.onmessage = async (event) => {
+    const connectWebSocket = () => {
       try {
-        const message = JSON.parse(event.data);
-        if (message.type === 'rfid') {
-          console.log('Received RFID:', message.data);
-          setLastScannedRFID(message.data);
-          
-          // Immediately check the ID
-          const result = await checkId(Number(message.data));
-          if (result.exists) {
-            console.log('Valid ID found, navigating to main...');
-            sessionStorage.setItem('userId', message.data);
-            navigate('/main');
-          } else {
-            setError('ID ikke genkendt');
-            setTimeout(() => setError(''), 3000);
+        ws = new WebSocket('ws://localhost:8080');
+        setWsStatus('connecting');
+
+        ws.onopen = () => {
+          console.log('WebSocket connected');
+          setWsStatus('connected');
+          setError('');
+        };
+
+        ws.onmessage = async (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            if (message.type === 'rfid') {
+              setLastScannedRFID(message.data);
+              const result = await checkId(Number(message.data));
+              if (result.exists) {
+                sessionStorage.setItem('userId', message.data);
+                navigate('/main');
+              } else {
+                setError('ID ikke genkendt');
+                setTimeout(() => setError(''), 3000);
+              }
+            }
+          } catch (err) {
+            console.error('Error processing message:', err);
+            setError(err instanceof Error ? err.message : 'Der skete en fejl');
           }
-        }
+        };
+
+        ws.onerror = () => {
+          setWsStatus('error');
+          setError('Kunne ikke forbinde til RFID-læser');
+        };
+
+        ws.onclose = () => {
+          setWsStatus('error');
+          reconnectTimer = setTimeout(connectWebSocket, 5000);
+        };
       } catch (err) {
-        console.error('Error processing RFID:', err);
-        setError(err instanceof Error ? err.message : 'Der skete en fejl');
-        setTimeout(() => setError(''), 3000);
+        setError('Connection failed');
+        setWsStatus('error');
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setError('Kunne ikke forbinde til RFID-læser');
-    };
+    connectWebSocket();
 
-    return () => ws.close();
+    return () => {
+      if (ws) ws.close();
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+    };
   }, [navigate, setLastScannedRFID]);
 
   return (
