@@ -11,11 +11,6 @@ class ArduinoService extends EventEmitter {
   private readonly BAUD_RATE = 9600;
 
   public async connect(): Promise<void> {
-    if (this.serialPort?.isOpen) {
-      console.log('Serial port already open');
-      return;
-    }
-
     try {
       this.serialPort = new SerialPort({
         path: this.PORT_PATH,
@@ -29,7 +24,6 @@ class ArduinoService extends EventEmitter {
 
       this.serialPort.on("open", () => {
         console.log("Arduino connected on", this.PORT_PATH);
-        console.log("Serial port status:", this.serialPort?.isOpen);
         this.emit("connected");
       });
 
@@ -95,10 +89,6 @@ class ArduinoService extends EventEmitter {
       }
       console.log(`Sent to Arduino: ${formattedData}`);
     });
-  }
-
-  public isConnected(): boolean {
-    return this.serialPort?.isOpen ?? false;
   }
 }
 

@@ -195,7 +195,7 @@ const server = app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   try {
     await arduinoService.connect();
-    console.log('Arduino service connected:', arduinoService.isConnected());
+    console.log('Arduino service connected:');
   } catch (error) {
     console.error('Failed to connect Arduino service:', error);
   }
