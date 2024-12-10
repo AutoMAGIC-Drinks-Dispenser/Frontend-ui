@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useUserStore } from '../../store/store';
+import { useStore } from '../../store/store';
 import { addUser as addUserApi, removeUser, getAllUsers } from '../../components/communication/api';
 
 export const AddUser: React.FC = () => {
@@ -9,14 +9,14 @@ export const AddUser: React.FC = () => {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   
-  const { users, addUser, deleteUser } = useUserStore();
+  const { users, addUser, deleteUser } = useStore();
 
   // Load users from database when component mounts
   useEffect(() => {
     const loadUsers = async () => {
       try {
         // Reset store before loading
-        useUserStore.setState({ users: [] });
+        useStore.setState({ users: [] });
         const dbUsers = await getAllUsers();
         
         // Add unique users to store
@@ -48,7 +48,7 @@ export const AddUser: React.FC = () => {
   const refreshUsers = async () => {
     try {
       // Reset store before refreshing
-      useUserStore.setState({ users: [] });
+      useStore.setState({ users: [] });
       const dbUsers = await getAllUsers();
       
       // Add unique users to store
