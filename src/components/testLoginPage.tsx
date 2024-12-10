@@ -1,4 +1,3 @@
-// loginPage.tsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { checkId } from './communication/api';
@@ -6,24 +5,27 @@ import { WebSerialCommunication } from './communication/web_serial_com';
 
 export const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
+  const [lastScannedRFID, setLastScannedRFID] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Connect to WebSocket server
     const ws = new WebSocket('ws://localhost:8080');
+
+    ws.onopen = () => {
+      console.log('WebSocket Connected');
+      setError('');
+    };
 
     ws.onmessage = async (event) => {
       try {
         const message = JSON.parse(event.data);
+        console.log('Received:', message);
         
         if (message.type === 'rfid') {
-          const rfidData = message.data;
-          console.log('Received RFID:', rfidData);
-          
-          // Check if RFID exists in database
-          const result = await checkId(Number(rfidData));
+          setLastScannedRFID(message.data);
+          const result = await checkId(Number(message.data));
           if (result.exists) {
-            sessionStorage.setItem('userId', rfidData);
+            sessionStorage.setItem('userId', message.data);
             navigate('/main');
           } else {
             setError('ID ikke genkendt');
@@ -31,38 +33,32 @@ export const LoginPage: React.FC = () => {
           }
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Der skete en fejl');
-        setTimeout(() => setError(''), 3000);
+        console.error('Error:', err);
+        setError('Fejl ved scanning');
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setError('Forbindelsesfejl');
-    };
-
-    // Cleanup on unmount
-    return () => {
-      ws.close();
-    };
+    return () => ws.close();
   }, [navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <div className="p-8 bg-white rounded-lg shadow-md text-center">
         <h1 className="text-2xl font-bold mb-6">Log ind</h1>
-        <p className="text-lg mb-4">*          Scan RFID chip          *</p>
+        <div className="mb-4">
+          <WebSerialCommunication />
+        </div>
+        <p className="text-lg mb-4">
+          {lastScannedRFID 
+            ? `Sidste scannede RFID: ${lastScannedRFID}` 
+            : 'Scan dit RFID kort...'}
+        </p>
         {error && (
-          <div>
-            <div className="p-3 bg-red-100 text-red-700 rounded mt-4">
-              {error}
-            </div>
-            <div className="mt-4">
-              <WebSerialCommunication />
-            </div>
+          <div className="p-3 bg-red-100 text-red-700 rounded mt-4">
+            {error}
           </div>
         )}
       </div>
     </div>
   );
-};
+}; 
