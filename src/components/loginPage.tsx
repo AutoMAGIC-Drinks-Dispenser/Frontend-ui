@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { checkId } from './communication/api';
+import { WebSerialCommunication } from './communication/web_serial_com';
 
 export const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
@@ -50,10 +51,12 @@ export const LoginPage: React.FC = () => {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <div className="p-8 bg-white rounded-lg shadow-md text-center">
         <h1 className="text-2xl font-bold mb-6">Log ind</h1>
-        <p className="text-lg mb-4">Scan venligst dit RFID kort</p>
+        <div>
+        </div>
+        <p className="text-lg mb-4">*          Scan RFID chip          *</p>
         {error && (
-          <div className="p-3 bg-red-100 text-red-700 rounded mt-4">
-            {error}
+          <div className="mb-4">
+          <WebSerialCommunication />
           </div>
         )}
       </div>
