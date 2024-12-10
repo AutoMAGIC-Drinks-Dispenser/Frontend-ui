@@ -2,18 +2,35 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { checkId } from '../components/communication/api';
+import { useUserStore } from '../store/store';
 
 export const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const TEST_RFID = "1"; // Hardcoded test RFID
+  const { lastScannedRFID, setLastScannedRFID } = useUserStore();
+
+  useEffect(() => {
+    // Setup WebSocket connection
+    const ws = new WebSocket('ws://localhost:8080');
+
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      if (message.type === 'rfid') {
+        setLastScannedRFID(message.data);
+      }
+    };
+
+    return () => ws.close();
+  }, [setLastScannedRFID]);
 
   useEffect(() => {
     const checkRFID = async () => {
+      if (!lastScannedRFID) return;
+
       try {
-        const result = await checkId(Number(TEST_RFID));
+        const result = await checkId(Number(lastScannedRFID));
         if (result.exists) {
-          sessionStorage.setItem('userId', TEST_RFID);
+          sessionStorage.setItem('userId', lastScannedRFID);
           navigate('/main');
         } else {
           setError('ID ikke genkendt');
@@ -25,15 +42,18 @@ export const LoginPage: React.FC = () => {
       }
     };
 
-    // Simuler en kort forsinkelse før login for at vise login siden
-    setTimeout(checkRFID, 1000);
-  }, [navigate]);
+    checkRFID();
+  }, [lastScannedRFID, navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <div className="p-8 bg-white rounded-lg shadow-md text-center">
         <h1 className="text-2xl font-bold mb-6">Log ind</h1>
-        <p className="text-lg mb-4">Test mode - Simulerer RFID scan med ID: {TEST_RFID}</p>
+        <p className="text-lg mb-4">
+          {lastScannedRFID 
+            ? `Sidste scannede RFID: ${lastScannedRFID}` 
+            : 'Scan dit RFID kort...'}
+        </p>
         {error && (
           <div className="p-3 bg-red-100 text-red-700 rounded mt-4">
             {error}

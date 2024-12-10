@@ -5,14 +5,17 @@ type User = {
   username: string;
 };
 
-type UserStore = {
+type RFIDStore = {
   users: User[];
+  lastScannedRFID: string | null;
   addUser: (user: User) => void;
   deleteUser: (userID: string) => void;
+  setLastScannedRFID: (rfid: string) => void;
 };
 
-export const useUserStore = create<UserStore>((set) => ({
+export const useUserStore = create<RFIDStore>((set) => ({
   users: [],
+  lastScannedRFID: null,
   addUser: (user) =>
     set((state) => ({
       users: [...state.users, user],
@@ -20,5 +23,9 @@ export const useUserStore = create<UserStore>((set) => ({
   deleteUser: (userID) =>
     set((state) => ({
       users: state.users.filter((user) => user.userID !== userID),
+    })),
+  setLastScannedRFID: (rfid) =>
+    set(() => ({
+      lastScannedRFID: rfid,
     })),
 }));
