@@ -30,10 +30,12 @@ class ArduinoService extends EventEmitter {
 
       this.parser.on('data', (data: string) => {
         const cleanData = data.trim();
-        if (cleanData.startsWith('RFID:')) {
-          const rfid = cleanData.split(':')[1].trim();
-          this.emit('rfid', rfid);
-          console.log('Received RFID:', rfid);
+        console.log('Raw data received:', cleanData);
+        
+        const numericValue = cleanData.replace(/\D/g, '');
+        if (numericValue) {
+          this.emit('rfid', numericValue);
+          console.log('Emitted RFID:', numericValue);
         }
       });
 

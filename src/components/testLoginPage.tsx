@@ -13,37 +13,38 @@ export const LoginPage: React.FC = () => {
     // Setup WebSocket connection
     const ws = new WebSocket('ws://localhost:8080');
 
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      if (message.type === 'rfid') {
-        setLastScannedRFID(message.data);
-      }
-    };
-
-    return () => ws.close();
-  }, [setLastScannedRFID]);
-
-  useEffect(() => {
-    const checkRFID = async () => {
-      if (!lastScannedRFID) return;
-
+    ws.onmessage = async (event) => {
       try {
-        const result = await checkId(Number(lastScannedRFID));
-        if (result.exists) {
-          sessionStorage.setItem('userId', lastScannedRFID);
-          navigate('/main');
-        } else {
-          setError('ID ikke genkendt');
-          setTimeout(() => setError(''), 3000);
+        const message = JSON.parse(event.data);
+        if (message.type === 'rfid') {
+          console.log('Received RFID:', message.data);
+          setLastScannedRFID(message.data);
+          
+          // Immediately check the ID
+          const result = await checkId(Number(message.data));
+          if (result.exists) {
+            console.log('Valid ID found, navigating to main...');
+            sessionStorage.setItem('userId', message.data);
+            navigate('/main');
+          } else {
+            setError('ID ikke genkendt');
+            setTimeout(() => setError(''), 3000);
+          }
         }
       } catch (err) {
+        console.error('Error processing RFID:', err);
         setError(err instanceof Error ? err.message : 'Der skete en fejl');
         setTimeout(() => setError(''), 3000);
       }
     };
 
-    checkRFID();
-  }, [lastScannedRFID, navigate]);
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setError('Kunne ikke forbinde til RFID-læser');
+    };
+
+    return () => ws.close();
+  }, [navigate, setLastScannedRFID]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
