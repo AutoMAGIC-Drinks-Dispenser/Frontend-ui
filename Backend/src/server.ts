@@ -191,8 +191,14 @@ app.delete("/api/remove-user/:id", async (req, res) => {
 });
 
 const PORT = 3000;
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+  try {
+    await arduinoService.connect();
+    console.log('Arduino service connected:', arduinoService.isConnected());
+  } catch (error) {
+    console.error('Failed to connect Arduino service:', error);
+  }
 });
 
 // Set up WebSocket server
@@ -201,17 +207,19 @@ const wss = new WebSocket.Server({ port: 8080 });
 wss.on('connection', (ws) => {
   console.log('Client connected to WebSocket');
 
-  // Create a single event listener per connection
   const dataHandler = (data: string) => {
     try {
-      console.log('Sending to WebSocket clients:', data);
-      ws.send(data);
+      console.log('Arduino data received in server:', data);
+      console.log('WebSocket readyState:', ws.readyState);
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(data);
+        console.log('Data sent to WebSocket client:', data);
+      }
     } catch (error) {
       console.error('Error sending WebSocket data:', error);
     }
   };
 
-  // Add the event listener
   arduinoService.on("data", dataHandler);
 
   ws.on('close', () => {

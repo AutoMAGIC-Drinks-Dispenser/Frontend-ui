@@ -16,18 +16,7 @@ class ArduinoWebSocket {
 
     this.ws.onmessage = (event) => {
       console.log('Raw data received:', event.data);
-      try {
-        // Notify all subscribers
-        this.subscribers.forEach(callback => {
-          try {
-            callback(event.data);
-          } catch (error) {
-            console.error('Error in subscriber callback:', error);
-          }
-        });
-      } catch (error) {
-        console.error('Error processing message:', error);
-      }
+      this.subscribers.forEach(callback => callback(event.data));
     };
 
     this.ws.onerror = (error) => {

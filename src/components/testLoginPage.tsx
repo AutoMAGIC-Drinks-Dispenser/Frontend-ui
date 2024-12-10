@@ -15,44 +15,62 @@ export const LoginPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // This function handles the data in your login page
     const handleArduinoData = async (data: string) => {
-      console.log('Received RFID data:', data);
-      
-      const match = data;
-      if (!match) {
-        console.log('Invalid data format:', data);
-        return;
-      }
-      
-      const rfid = match;
-      console.log('Processing RFID:', rfid);
-      setRfidData(rfid);
+      console.log('Raw data received in LoginPage:', data);
       
       try {
-        console.log('Checking ID:', rfid);
-        const result = await checkId(Number(rfid));
-        console.log('Check ID result:', result);
-        if (result.exists) {
-          console.log('Valid ID found, navigating to main...');
-          sessionStorage.setItem('userId', rfid);
-          navigate('/main');
-        } else {
-          console.log('ID not recognized');
-          setError('ID ikke genkendt');
+        // Extract user ID from the formatted string (user:1234)
+        const userId = data.split(':')[1];
+        console.log('Extracted user ID:', userId);
+        
+        if (!userId) {
+          console.error('No user ID found in data:', data);
+          return;
+        }
+
+        setRfidData(userId);
+        
+        try {
+          console.log('Checking ID:', userId);
+          const result = await checkId(Number(userId));
+          console.log('Check ID result:', result);
+          
+          if (result.exists) {
+            console.log('Valid ID found, navigating to main...');
+            sessionStorage.setItem('userId', userId);
+            navigate('/main');
+          } else {
+            console.log('ID not recognized');
+            setError('ID ikke genkendt');
+            setTimeout(() => setError(''), 3000);
+          }
+        } catch (err) {
+          console.error('Error checking ID:', err);
+          setError(err instanceof Error ? err.message : 'Der skete en fejl');
           setTimeout(() => setError(''), 3000);
         }
-      } catch (err) {
-        console.error('Error checking ID:', err);
-        setError(err instanceof Error ? err.message : 'Der skete en fejl');
-        setTimeout(() => setError(''), 3000);
+      } catch (error) {
+        console.error('Error processing Arduino data:', error);
       }
     };
 
-    console.log('Setting up Arduino WebSocket handler');
-    arduinoWebSocket.subscribe(handleArduinoData);
+    // Subscribe to WebSocket data
+    const unsubscribe = arduinoWebSocket.subscribe(handleArduinoData);
+
+    // Verify WebSocket connection
+    fetch('http://localhost:3000/api/arduino/status')
+      .then(res => res.json())
+      .then(status => {
+        console.log('Arduino connection status:', status);
+      })
+      .catch(err => {
+        console.error('Failed to check Arduino status:', err);
+      });
+
     return () => {
       console.log('Cleaning up Arduino WebSocket handler');
-      arduinoWebSocket.unsubscribe(handleArduinoData);
+      unsubscribe();
     };
   }, [navigate]);
 

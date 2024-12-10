@@ -11,38 +11,58 @@ class ArduinoService extends EventEmitter {
   private readonly BAUD_RATE = 9600;
 
   public async connect(): Promise<void> {
-    if (this.serialPort?.isOpen) return;
+    if (this.serialPort?.isOpen) {
+      console.log('Serial port already open');
+      return;
+    }
 
-    this.serialPort = new SerialPort({
-      path: this.PORT_PATH,
-      baudRate: this.BAUD_RATE,
-      dataBits: 8,
-      parity: "none",
-      stopBits: 1,
-    });
+    try {
+      this.serialPort = new SerialPort({
+        path: this.PORT_PATH,
+        baudRate: this.BAUD_RATE,
+        dataBits: 8,
+        parity: "none",
+        stopBits: 1,
+      });
 
-    this.parser = this.serialPort.pipe(new ReadlineParser({ delimiter: '\n' }));
+      this.parser = this.serialPort.pipe(new ReadlineParser({ delimiter: '\n' }));
 
-    this.serialPort.on("open", () => {
-      console.log("Arduino connected on", this.PORT_PATH);
-      this.emit("connected");
-    });
+      this.serialPort.on("open", () => {
+        console.log("Arduino connected on", this.PORT_PATH);
+        console.log("Serial port status:", this.serialPort?.isOpen);
+        this.emit("connected");
+      });
 
-    this.serialPort.on("error", (err) => {
-      console.error("Serial port error:", err);
-      this.emit("error", err);
-    });
+      this.parser.on("data", (data: string) => {
+        try {
+          const message = data.trim();
+          console.log('------- Arduino Data Flow -------');
+          console.log('1. Raw serial data received:', message);
+          console.log('2. Data type:', typeof message);
+          console.log('3. Formatted message:', `user:${message}`);
+          this.emit("data", `user:${message}`);
+          console.log('4. Data emitted to listeners');
+          console.log('-------------------------------');
+        } catch (error) {
+          console.error('Error processing serial data:', error);
+        }
+      });
 
-    this.serialPort.on("close", () => {
-      console.log("Serial port closed.");
-      this.emit("disconnected");
-    });
+      // Add error handlers
+      this.serialPort.on("error", (err) => {
+        console.error("Serial port error:", err);
+        this.emit("error", err);
+      });
 
-    this.parser.on("data", (data: string) => {
-      const message = data.trim();
-      console.log(`Received from Arduino: ${message}`);
-      this.emit("data", message);
-    });
+      this.parser.on("error", (err) => {
+        console.error("Parser error:", err);
+        this.emit("error", err);
+      });
+
+    } catch (error) {
+      console.error('Error connecting to serial port:', error);
+      throw error;
+    }
   }
 
   public async disconnect(): Promise<void> {
