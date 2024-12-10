@@ -30,6 +30,8 @@ interface IncrementResponse {
   newValue: number;
 }
 
+const API_BASE_URL = 'http://localhost:3000/api';
+
 export async function incrementAlltime(userId: number): Promise<IncrementResponse> {
   const response = await fetch(`http://localhost:3000/api/increment-alltime/${userId}`, {
     method: 'POST'
@@ -91,3 +93,42 @@ export async function removeUser(id: number): Promise<RemoveUserResponse> {
   }
   return response.json();
 }
+
+export const sendToArduino = async (command: string): Promise<{ message: string }> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/arduino/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ command }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to send command to Arduino');
+    }
+
+    return response.json();
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getArduinoStatus = async (): Promise<{ connected: boolean }> => {
+  const response = await fetch(`${API_BASE_URL}/arduino/status`);
+  return response.json();
+};
+
+export const connectToArduino = async (): Promise<{ message: string }> => {
+  const response = await fetch(`${API_BASE_URL}/arduino/connect`, {
+    method: 'POST',
+  });
+  return response.json();
+};
+
+export const disconnectFromArduino = async (): Promise<{ message: string }> => {
+  const response = await fetch(`${API_BASE_URL}/arduino/disconnect`, {
+    method: 'POST',
+  });
+  return response.json();
+};

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { SpejlaegPopupModal } from "./dispense_button_modal";
-import { sendDataToArduino } from "./communication/web_serial_com";
-import { incrementAlltime } from "./communication/api"; // Add this import
+import { sendToArduino } from "./communication/api";
+import { incrementAlltime } from "./communication/api";
 
 export const SpejlaegButtonComponent: React.FC = () => {
   const [showPopup, setShowPopup] = useState<"single" | "double" | null>(null);
@@ -23,7 +23,6 @@ export const SpejlaegButtonComponent: React.FC = () => {
   const handleStart = async () => {
     if (showPopup) {
       try {
-        // Get the logged in user's ID
         const userId = sessionStorage.getItem('userId');
         if (!userId) {
           setError('Du skal være logget ind for at bestille');
@@ -33,10 +32,9 @@ export const SpejlaegButtonComponent: React.FC = () => {
         // Increment the alltime counter
         await incrementAlltime(Number(userId));
         
-        // If increment was successful, send to Arduino
-        sendDataToArduino(showPopup);
+        // Send command to Arduino through backend
+        await sendToArduino(showPopup);
         
-        // Close the popup
         setShowPopup(null);
         setError("");
       } catch (err) {
