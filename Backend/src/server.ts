@@ -5,6 +5,7 @@ import cors from 'cors';
 import WebSocket from 'ws';
 import { arduinoService } from './modules/arduino/arduinoService';
 import { SerialPort } from 'serialport';
+import { arduinoRouter } from './modules/arduino/arduinoRoutes';
 
 const app = express();
 app.use(cors());
@@ -189,6 +190,9 @@ app.get('/api/serial-ports', async (req, res) => {
     res.status(500).json({ error: 'Failed to list serial ports' });
   }
 });
+
+// Add Arduino routes
+app.use('/api/arduino', arduinoRouter);
 
 const PORT = 3000;
 app.listen(PORT, () => {
