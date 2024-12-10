@@ -3,7 +3,7 @@ import express from 'express';
 import mysql from 'mysql2/promise';
 import cors from 'cors';
 import { WebSocket, WebSocketServer } from 'ws';
-import { arduinoService } from './modules/arduino/arduinoService';
+import { arduinoService } from './modules/arduino/arduinoService.js';
 
 const app = express();
 app.use(cors());

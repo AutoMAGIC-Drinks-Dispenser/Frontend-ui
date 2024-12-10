@@ -23,7 +23,8 @@ class ArduinoService extends EventEmitter {
         stopBits: 1
       });
 
-      this.parser = this.serialPort.pipe(new ReadlineParser({ delimiter: '\n' }));
+      this.parser = new ReadlineParser();
+      this.serialPort.pipe(this.parser);
 
       this.serialPort.on('open', () => {
         console.log('UART connection established');
