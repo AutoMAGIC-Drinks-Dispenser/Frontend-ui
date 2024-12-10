@@ -204,13 +204,20 @@ wss.on('connection', (ws) => {
   // Create a single event listener per connection
   const dataHandler = (data: string) => {
     try {
-  arduinoService.on("data", (data: string) => {
-    console.log('Sending to WebSocket clients:', data);
-    ws.send(data);
-  });
+      console.log('Sending to WebSocket clients:', data);
+      ws.send(data);
+    } catch (error) {
+      console.error('Error sending WebSocket data:', error);
+    }
+  };
+
+  // Add the event listener
+  arduinoService.on("data", dataHandler);
 
   ws.on('close', () => {
     console.log('Client disconnected from WebSocket');
+    // Remove the listener when connection closes
+    arduinoService.removeListener("data", dataHandler);
   });
 });
 
