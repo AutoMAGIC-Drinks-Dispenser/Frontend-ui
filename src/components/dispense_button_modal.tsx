@@ -1,13 +1,12 @@
 interface PopupProps {
   onClose: () => void;
-  onStart: () => void;
+  onStart: () => Promise<void>;
   err: string;
 }
 
 export const SpejlaegPopupModal: React.FC<PopupProps> = ({
   onClose,
   onStart,
-  err,
 }) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">

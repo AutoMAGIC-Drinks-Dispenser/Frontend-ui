@@ -2,6 +2,8 @@
 import express from 'express';
 import mysql from 'mysql2/promise';
 import cors from 'cors';
+import { WebSocket, WebSocketServer } from 'ws';
+import { arduinoService } from './modules/arduino/arduinoService.ts';
 
 const app = express();
 app.use(cors());
@@ -159,4 +161,21 @@ app.delete('/api/remove-user/:id', async (req, res) => {
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+const wss = new WebSocketServer({ port: 8080 });
+
+wss.on('connection', (ws: WebSocket) => {
+  console.log('Client connected to WebSocket');
+
+  // Forward RFID readings to connected clients
+  const rfidHandler = (rfidData: string) => {
+    ws.send(JSON.stringify({ type: 'rfid', data: rfidData }));
+  };
+
+  arduinoService.on('rfid', rfidHandler);
+
+  ws.on('close', () => {
+    arduinoService.off('rfid', rfidHandler);
+  });
 });

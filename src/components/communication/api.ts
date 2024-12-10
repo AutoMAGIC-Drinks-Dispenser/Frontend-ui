@@ -1,5 +1,6 @@
-// src/components/communication/api.ts
+// api.ts
 
+// Existing interfaces
 interface User {
   id: number;
   username: string;
@@ -24,14 +25,29 @@ interface CheckIdResponse {
   exists: boolean;
   username?: string;
 }
+
 interface IncrementResponse {
   success: boolean;
   message: string;
   newValue: number;
 }
 
+// New Arduino interfaces
+interface ArduinoStatusResponse {
+  connected: boolean;
+  message: string;
+}
+
+interface ArduinoSendResponse {
+  success: boolean;
+  message: string;
+}
+
+const API_BASE_URL = 'http://localhost:3000/api';
+
+// Existing functions
 export async function incrementAlltime(userId: number): Promise<IncrementResponse> {
-  const response = await fetch(`http://localhost:3000/api/increment-alltime/${userId}`, {
+  const response = await fetch(`${API_BASE_URL}/increment-alltime/${userId}`, {
     method: 'POST'
   });
   
@@ -42,9 +58,8 @@ export async function incrementAlltime(userId: number): Promise<IncrementRespons
   return response.json();
 }
 
-// Hent alle brugere
 export async function getAllUsers(): Promise<User[]> {
-  const response = await fetch('http://localhost:3000/api/users');
+  const response = await fetch(`${API_BASE_URL}/users`);
   if (!response.ok) {
     const errorData = await response.json() as ApiError;
     throw new Error(errorData.error || 'Failed to fetch users');
@@ -52,9 +67,8 @@ export async function getAllUsers(): Promise<User[]> {
   return response.json();
 }
 
-// Check om ID eksisterer
 export async function checkId(id: number): Promise<CheckIdResponse> {
-  const response = await fetch(`http://localhost:3000/api/check-id/${id}`);
+  const response = await fetch(`${API_BASE_URL}/check-id/${id}`);
   if (!response.ok) {
     const errorData = await response.json() as ApiError;
     throw new Error(errorData.error || 'Failed to check ID');
@@ -62,9 +76,8 @@ export async function checkId(id: number): Promise<CheckIdResponse> {
   return response.json();
 }
 
-// Tilføj ny bruger
 export async function addUser(username: string): Promise<AddUserResponse> {
-  const response = await fetch('http://localhost:3000/api/add-user', {
+  const response = await fetch(`${API_BASE_URL}/add-user`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -79,9 +92,8 @@ export async function addUser(username: string): Promise<AddUserResponse> {
   return response.json();
 }
 
-// Fjern bruger
 export async function removeUser(id: number): Promise<RemoveUserResponse> {
-  const response = await fetch(`http://localhost:3000/api/remove-user/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/remove-user/${id}`, {
     method: 'DELETE'
   });
   
@@ -90,4 +102,40 @@ export async function removeUser(id: number): Promise<RemoveUserResponse> {
     throw new Error(errorData.error || 'Failed to remove user');
   }
   return response.json();
+}
+
+// New Arduino functions
+export async function sendToArduino(data: string): Promise<ArduinoSendResponse> {
+  const response = await fetch(`${API_BASE_URL}/arduino/send`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ data })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json() as ApiError;
+    throw new Error(errorData.error || 'Failed to send data to Arduino');
+  }
+  return response.json();
+}
+
+export async function getArduinoStatus(): Promise<ArduinoStatusResponse> {
+  const response = await fetch(`${API_BASE_URL}/arduino/status`);
+  
+  if (!response.ok) {
+    const errorData = await response.json() as ApiError;
+    throw new Error(errorData.error || 'Failed to get Arduino status');
+  }
+  return response.json();
+}
+
+// Helper function to check Arduino connection before sending data
+export async function sendToArduinoWithCheck(data: string): Promise<ArduinoSendResponse> {
+  const status = await getArduinoStatus();
+  if (!status.connected) {
+    throw new Error('Arduino is not connected');
+  }
+  return sendToArduino(data);
 }
