@@ -201,6 +201,9 @@ const wss = new WebSocket.Server({ port: 8080 });
 wss.on('connection', (ws) => {
   console.log('Client connected to WebSocket');
 
+  // Create a single event listener per connection
+  const dataHandler = (data: string) => {
+    try {
   arduinoService.on("data", (data: string) => {
     console.log('Sending to WebSocket clients:', data);
     ws.send(data);

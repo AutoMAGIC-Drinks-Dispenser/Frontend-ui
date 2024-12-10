@@ -7,6 +7,7 @@ class ArduinoWebSocket {
   }
 
   private connect() {
+    console.log('Attempting to connect to WebSocket...');
     this.ws = new WebSocket('ws://localhost:8080');
 
     this.ws.onopen = () => {
@@ -14,8 +15,19 @@ class ArduinoWebSocket {
     };
 
     this.ws.onmessage = (event) => {
-      console.log('Received from WebSocket:', event.data);
-      this.subscribers.forEach(callback => callback(event.data));
+      console.log('Raw data received:', event.data);
+      try {
+        // Notify all subscribers
+        this.subscribers.forEach(callback => {
+          try {
+            callback(event.data);
+          } catch (error) {
+            console.error('Error in subscriber callback:', error);
+          }
+        });
+      } catch (error) {
+        console.error('Error processing message:', error);
+      }
     };
 
     this.ws.onerror = (error) => {
@@ -29,11 +41,14 @@ class ArduinoWebSocket {
   }
 
   public subscribe(callback: (data: string) => void) {
+    console.log('New subscriber added');
     this.subscribers.push(callback);
+    return () => this.unsubscribe(callback); // Return unsubscribe function
   }
 
   public unsubscribe(callback: (data: string) => void) {
     this.subscribers = this.subscribers.filter(cb => cb !== callback);
+    console.log('Subscriber removed. Remaining subscribers:', this.subscribers.length);
   }
 }
 
