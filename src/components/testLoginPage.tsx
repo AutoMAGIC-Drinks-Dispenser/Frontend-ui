@@ -9,27 +9,30 @@ export const LoginPage: React.FC = () => {
   const [rfidData, setRfidData] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Clear any existing session when the login page loads
+  useEffect(() => {
+    sessionStorage.removeItem('userId');
+  }, []);
+
   useEffect(() => {
     // Handle incoming Arduino RFID data
     const handleArduinoData = async (data: string) => {
-      // Assuming the Arduino sends data in format "user:RFID_ID"
-      if (data.startsWith("user:")) {
-        const rfid = data.split(":")[1].trim();
-        setRfidData(rfid);
-        
-        try {
-          const result = await checkId(Number(rfid));
-          if (result.exists) {
-            sessionStorage.setItem('userId', rfid);
-            navigate('/main');
-          } else {
-            setError('ID ikke genkendt');
-            setTimeout(() => setError(''), 3000);
-          }
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Der skete en fejl');
+      // The Arduino sends just the ID number ("1" or "2")
+      const rfid = data.trim();
+      setRfidData(rfid);
+      
+      try {
+        const result = await checkId(Number(rfid));
+        if (result.exists) {
+          sessionStorage.setItem('userId', rfid);
+          navigate('/main');
+        } else {
+          setError('ID ikke genkendt');
           setTimeout(() => setError(''), 3000);
         }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Der skete en fejl');
+        setTimeout(() => setError(''), 3000);
       }
     };
 

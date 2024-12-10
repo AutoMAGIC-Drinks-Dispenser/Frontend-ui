@@ -199,10 +199,15 @@ const server = app.listen(PORT, () => {
 const wss = new WebSocket.Server({ port: 8080 });
 
 wss.on('connection', (ws) => {
-  console.log('Client connected');
+  console.log('Client connected to WebSocket');
+
+  arduinoService.on("data", (data: string) => {
+    console.log('Sending to WebSocket clients:', data);
+    ws.send(data);
+  });
 
   ws.on('close', () => {
-    console.log('Client disconnected');
+    console.log('Client disconnected from WebSocket');
   });
 });
 

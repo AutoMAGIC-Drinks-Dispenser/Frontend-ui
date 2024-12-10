@@ -8,7 +8,12 @@ class ArduinoWebSocket {
     this.ws = new WebSocket('ws://localhost:8080');
 
     this.ws.onmessage = (event) => {
+      console.log('Received Arduino data:', event.data);
       this.callbacks.forEach(callback => callback(event.data));
+    };
+
+    this.ws.onopen = () => {
+      console.log('WebSocket connected');
     };
 
     this.ws.onclose = () => {
