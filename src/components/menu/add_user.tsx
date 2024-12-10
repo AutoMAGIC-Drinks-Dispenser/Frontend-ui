@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useUserStore } from '../../store/store';
 import { addUser as addUserApi, removeUser, getAllUsers } from '../../components/communication/api';
+import { TouchKeyboard } from './Touch_keyboard';
 
 export const AddUser: React.FC = () => {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
@@ -8,6 +9,7 @@ export const AddUser: React.FC = () => {
   const [newUsername, setNewUsername] = useState("");
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   
   const { users, addUser, deleteUser } = useUserStore();
 
@@ -15,11 +17,9 @@ export const AddUser: React.FC = () => {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        // Reset store before loading
         useUserStore.setState({ users: [] });
         const dbUsers = await getAllUsers();
         
-        // Add unique users to store
         const uniqueUsers = Array.from(new Set(
           dbUsers.map(user => JSON.stringify({ 
             userID: user.id.toString(), 
@@ -36,22 +36,26 @@ export const AddUser: React.FC = () => {
     loadUsers();
   }, [addUser]);
 
-  const toggleDropdown = () => setDropdownOpen(!isDropdownOpen);
+  const toggleDropdown = () => {
+    setDropdownOpen(!isDropdownOpen);
+    if (!isDropdownOpen) {
+      setKeyboardVisible(false);
+    }
+  };
   
   const toggleModal = () => {
     setModalOpen(!isModalOpen);
     if (!isModalOpen) {
       refreshUsers();
     }
+    setKeyboardVisible(false);
   };
 
   const refreshUsers = async () => {
     try {
-      // Reset store before refreshing
       useUserStore.setState({ users: [] });
       const dbUsers = await getAllUsers();
       
-      // Add unique users to store
       const uniqueUsers = Array.from(new Set(
         dbUsers.map(user => JSON.stringify({ 
           userID: user.id.toString(), 
@@ -75,7 +79,6 @@ export const AddUser: React.FC = () => {
 
       const result = await addUserApi(newUsername);
       
-      // Add user to store
       addUser({
         userID: result.id.toString(),
         username: newUsername
@@ -83,6 +86,7 @@ export const AddUser: React.FC = () => {
 
       setSuccessMessage(`Bruger ${newUsername} tilføjet med ID: ${result.id}`);
       setNewUsername("");
+      setKeyboardVisible(false);
       
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
@@ -95,7 +99,6 @@ export const AddUser: React.FC = () => {
       setError("");
       await removeUser(Number(userId));
       
-      // Remove user from store
       deleteUser(userId);
       
       setSuccessMessage("Bruger slettet");
@@ -103,6 +106,10 @@ export const AddUser: React.FC = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Der skete en fejl');
     }
+  };
+
+  const handleInputFocus = () => {
+    setKeyboardVisible(true);
   };
 
   return (
@@ -125,6 +132,7 @@ export const AddUser: React.FC = () => {
             placeholder="Username"
             value={newUsername}
             onChange={(e) => setNewUsername(e.target.value)}
+            onFocus={handleInputFocus}
             className="border p-2 w-full mb-2"
             maxLength={10}
           />
@@ -185,6 +193,14 @@ export const AddUser: React.FC = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {isKeyboardVisible && (
+        <TouchKeyboard
+          value={newUsername}
+          onChange={setNewUsername}
+          onClose={() => setKeyboardVisible(false)}
+        />
       )}
     </div>
   );
