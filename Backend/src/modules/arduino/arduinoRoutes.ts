@@ -1,6 +1,7 @@
 // // backend/src/modules/arduino/arduinoRoutes.ts
 import { Router } from 'express';
 import { arduinoService } from './arduinoService';
+import { SerialPort } from 'serialport';
 
 const router = Router();
 
@@ -32,6 +33,25 @@ router.get('/status', (req, res) => {
   res.json({ 
     connected: arduinoService.isConnected() 
   });
+});
+
+router.get('/test', async (req, res) => {
+  try {
+    const ports = await SerialPort.list();
+    const isConnected = arduinoService.isConnected();
+    
+    res.json({
+      availablePorts: ports,
+      currentConnection: {
+        isConnected,
+        port: arduinoService.getCurrentPort(),
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
 });
 
 export const arduinoRouter = router;

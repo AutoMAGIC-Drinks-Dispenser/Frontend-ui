@@ -19,23 +19,52 @@ class ArduinoService extends EventEmitter {
         return;
       }
 
-      console.log(`Connecting to ${this.PORT_PATH}...`);
+      // Check if port exists
+      const ports = await SerialPort.list();
+      console.log('Available ports:', ports);
+
+      console.log(`Attempting to connect to ${this.PORT_PATH}...`);
+      
+      // Create port with more explicit options
       this.serialPort = new SerialPort({
         path: this.PORT_PATH,
-        baudRate: this.BAUD_RATE
+        baudRate: this.BAUD_RATE,
+        dataBits: 8,
+        stopBits: 1,
+        parity: 'none',
+        rtscts: false,
+        xon: false,
+        xoff: false,
+        hupcl: true,
       });
 
-      this.parser = new ReadlineParser();
+      // Wait for port to open
+      await new Promise<void>((resolve, reject) => {
+        if (!this.serialPort) return reject(new Error('No serial port'));
+        
+        this.serialPort.on('open', () => {
+          console.log('Port opened successfully');
+          resolve();
+        });
+        
+        this.serialPort.on('error', (error) => {
+          console.error('Port error during opening:', error);
+          reject(error);
+        });
+      });
+
+      this.parser = new ReadlineParser({ delimiter: '\n' });
       this.serialPort.pipe(this.parser);
 
       this.parser.on('data', (data: string) => {
         const cleanData = data.trim();
         console.log('Raw data received:', cleanData);
         
+        // Try to extract a number from the data
         const numericValue = cleanData.replace(/\D/g, '');
         if (numericValue) {
+          console.log('Emitting RFID:', numericValue);
           this.emit('rfid', numericValue);
-          console.log('Emitted RFID:', numericValue);
         }
       });
 
@@ -43,6 +72,8 @@ class ArduinoService extends EventEmitter {
         console.error('Serial error:', error);
         this.emit('error', error);
       });
+
+      console.log('Serial port setup complete');
 
     } catch (error) {
       console.error('Failed to connect:', error);
