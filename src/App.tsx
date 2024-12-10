@@ -25,7 +25,7 @@ function App() {
           path="/main" 
           element={
             <ProtectedRoute>
-           <div>Protected Test Main Page</div>
+              <MainMenu />
             </ProtectedRoute>
           } 
         />
