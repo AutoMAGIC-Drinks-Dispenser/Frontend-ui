@@ -24,6 +24,7 @@ export const LoginPage: React.FC = () => {
           const result = await checkId(Number(rfidData));
           if (result.exists) {
             sessionStorage.setItem('userId', rfidData);
+            navigate('/main');
           } else {
             setError('ID ikke genkendt');
             setTimeout(() => setError(''), 3000);
