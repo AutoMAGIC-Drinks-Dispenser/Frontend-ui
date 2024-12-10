@@ -1,9 +1,10 @@
-import { SerialPort } from "serialport";
+import { SerialPort, ReadlineParser } from "serialport";
 import { EventEmitter } from "events";
 import { TextEncoder, TextDecoder } from "util";
 
 class ArduinoService extends EventEmitter {
   private serialPort: SerialPort | null = null;
+  private parser: ReadlineParser | null = null;
   private encoder: TextEncoder = new TextEncoder();
   private decoder: TextDecoder = new TextDecoder();
   private readonly PORT_PATH = "/dev/ttyS0";
@@ -20,8 +21,10 @@ class ArduinoService extends EventEmitter {
       stopBits: 1,
     });
 
+    this.parser = this.serialPort.pipe(new ReadlineParser({ delimiter: '\n' }));
+
     this.serialPort.on("open", () => {
-      console.log("Arduino connected.");
+      console.log("Arduino connected on", this.PORT_PATH);
       this.emit("connected");
     });
 
@@ -35,7 +38,11 @@ class ArduinoService extends EventEmitter {
       this.emit("disconnected");
     });
 
-    this.listenForData();
+    this.parser.on("data", (data: string) => {
+      const message = data.trim();
+      console.log(`Received from Arduino: ${message}`);
+      this.emit("data", message);
+    });
   }
 
   public async disconnect(): Promise<void> {
@@ -67,20 +74,6 @@ class ArduinoService extends EventEmitter {
         throw err;
       }
       console.log(`Sent to Arduino: ${formattedData}`);
-    });
-  }
-
-  private listenForData(): void {
-    let buffer = "";
-    this.serialPort?.on("data", (data: Buffer) => {
-      buffer += this.decoder.decode(data);
-      let delimiterIndex;
-      while ((delimiterIndex = buffer.indexOf("\n")) >= 0) {
-        const message = buffer.slice(0, delimiterIndex).trim();
-        buffer = buffer.slice(delimiterIndex + 1);
-        console.log(`Received from Arduino: ${message}`);
-        this.emit("data", message);
-      }
     });
   }
 

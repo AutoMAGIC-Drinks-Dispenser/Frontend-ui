@@ -5,14 +5,22 @@ type User = {
   username: string;
 };
 
-type UserStore = {
-  users: User[];
-  addUser: (user: User) => void;
-  deleteUser: (userID: string) => void;
+type ArduinoData = {
+  lastMessage: string;
+  timestamp: number;
 };
 
-export const useUserStore = create<UserStore>((set) => ({
+type Store = {
+  users: User[];
+  arduinoData: ArduinoData | null;
+  addUser: (user: User) => void;
+  deleteUser: (userID: string) => void;
+  setArduinoData: (message: string) => void;
+};
+
+export const useStore = create<Store>((set) => ({
   users: [],
+  arduinoData: null,
   addUser: (user) =>
     set((state) => ({
       users: [...state.users, user],
@@ -21,4 +29,11 @@ export const useUserStore = create<UserStore>((set) => ({
     set((state) => ({
       users: state.users.filter((user) => user.userID !== userID),
     })),
+  setArduinoData: (message) =>
+    set({
+      arduinoData: {
+        lastMessage: message,
+        timestamp: Date.now(),
+      },
+    }),
 }));
