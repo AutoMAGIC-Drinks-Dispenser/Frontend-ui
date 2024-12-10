@@ -30,6 +30,8 @@ class ArduinoService extends EventEmitter {
       this.emit("error", err);
     });
 
+
+
     this.serialPort.on("close", () => {
       console.log("Serial port closed.");
       this.emit("disconnected");
