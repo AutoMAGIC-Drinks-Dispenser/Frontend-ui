@@ -15,15 +15,23 @@ export const LoginPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Handle incoming Arduino RFID data
     const handleArduinoData = async (data: string) => {
-      // The Arduino sends just the ID number ("1" or "2")
-      const rfid = data.trim();
+      console.log('Received RFID data:', data);
+      
+      // Extract just the ID number from the data
+      const match = data.match(/user:(\d+)/);
+      if (!match) {
+        console.log('Invalid data format:', data);
+        return;
+      }
+      
+      const rfid = match[1];
       setRfidData(rfid);
       
       try {
         const result = await checkId(Number(rfid));
         if (result.exists) {
+          console.log('Valid ID found, navigating to main...');
           sessionStorage.setItem('userId', rfid);
           navigate('/main');
         } else {
@@ -31,18 +39,14 @@ export const LoginPage: React.FC = () => {
           setTimeout(() => setError(''), 3000);
         }
       } catch (err) {
+        console.error('Error checking ID:', err);
         setError(err instanceof Error ? err.message : 'Der skete en fejl');
         setTimeout(() => setError(''), 3000);
       }
     };
 
-    // Subscribe to Arduino WebSocket data
     arduinoWebSocket.subscribe(handleArduinoData);
-
-    // Cleanup subscription
-    return () => {
-      arduinoWebSocket.unsubscribe(handleArduinoData);
-    };
+    return () => arduinoWebSocket.unsubscribe(handleArduinoData);
   }, [navigate]);
 
   return (

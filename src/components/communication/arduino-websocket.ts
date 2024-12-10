@@ -1,41 +1,39 @@
-type ArduinoDataCallback = (data: string) => void;
-
 class ArduinoWebSocket {
   private ws: WebSocket | null = null;
-  private callbacks: Set<ArduinoDataCallback> = new Set();
+  private subscribers: ((data: string) => void)[] = [];
 
-  connect() {
+  constructor() {
+    this.connect();
+  }
+
+  private connect() {
     this.ws = new WebSocket('ws://localhost:8080');
-
-    this.ws.onmessage = (event) => {
-      console.log('Received Arduino data:', event.data);
-      this.callbacks.forEach(callback => callback(event.data));
-    };
 
     this.ws.onopen = () => {
       console.log('WebSocket connected');
     };
 
-    this.ws.onclose = () => {
-      console.log('WebSocket connection closed');
-      // Attempt to reconnect after 5 seconds
-      setTimeout(() => this.connect(), 5000);
+    this.ws.onmessage = (event) => {
+      console.log('Received from WebSocket:', event.data);
+      this.subscribers.forEach(callback => callback(event.data));
     };
 
     this.ws.onerror = (error) => {
       console.error('WebSocket error:', error);
     };
+
+    this.ws.onclose = () => {
+      console.log('WebSocket closed, attempting to reconnect...');
+      setTimeout(() => this.connect(), 3000);
+    };
   }
 
-  subscribe(callback: ArduinoDataCallback) {
-    this.callbacks.add(callback);
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      this.connect();
-    }
+  public subscribe(callback: (data: string) => void) {
+    this.subscribers.push(callback);
   }
 
-  unsubscribe(callback: ArduinoDataCallback) {
-    this.callbacks.delete(callback);
+  public unsubscribe(callback: (data: string) => void) {
+    this.subscribers = this.subscribers.filter(cb => cb !== callback);
   }
 }
 
