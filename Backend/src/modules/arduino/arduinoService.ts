@@ -1,35 +1,40 @@
-import { SerialPort, ReadlineParser } from 'serialport';
 import { EventEmitter } from 'events';
+const SerialPort = require('node-serialport').SerialPort;
 
 class ArduinoService extends EventEmitter {
-  private serialPort: SerialPort | null = null;
-  private parser: ReadlineParser | null = null;
+  private serialPort: any = null;
   private readonly PORT_PATH = '/dev/ttyS0';
   private readonly BAUD_RATE = 9600;
+  private buffer: string = '';
 
   constructor() {
     super();
     this.init();
   }
 
-  private async init() {
+  private init() {
     try {
       console.log(`Connecting to ${this.PORT_PATH}...`);
       
-      this.serialPort = new SerialPort({
-        path: this.PORT_PATH,
-        baudRate: this.BAUD_RATE,
+      this.serialPort = new SerialPort(this.PORT_PATH, {
+        baudRate: this.BAUD_RATE
       });
 
-      this.parser = new ReadlineParser();
-      this.serialPort.pipe(this.parser);
+      this.serialPort.on('data', (data: Buffer) => {
+        this.buffer += data.toString();
+        
+        if (this.buffer.includes('\n')) {
+          const lines = this.buffer.split('\n');
+          this.buffer = lines.pop() || ''; // Keep the last incomplete line
 
-      this.parser.on('data', (data: string) => {
-        const cleanData = data.trim();
-        if (cleanData.startsWith('RFID:')) {
-          const rfid = cleanData.split(':')[1].trim();
-          this.emit('rfid', rfid);
-          console.log('Received RFID:', rfid);
+          for (const line of lines) {
+            const cleanData = line.trim();
+            if (cleanData.startsWith('RFID:')) {
+              const rfid = cleanData.split(':')[1].trim();
+              this.emit('rfid', rfid);
+              console.log('Received RFID:', rfid);
+            }
+          }
         }
       });
 
@@ -38,14 +43,9 @@ class ArduinoService extends EventEmitter {
         this.emit('connected');
       });
 
-      this.serialPort.on('error', (error) => {
+      this.serialPort.on('error', (error: Error) => {
         console.error('Serial error:', error);
         this.emit('error', error);
-      });
-
-      this.serialPort.on('close', () => {
-        console.log('Serial connection closed');
-        this.emit('disconnected');
       });
 
     } catch (error) {
@@ -53,14 +53,14 @@ class ArduinoService extends EventEmitter {
     }
   }
 
-  public async sendData(data: string): Promise<boolean> {
+  public sendData(data: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       if (!this.serialPort?.isOpen) {
         reject(new Error('Serial port is not connected'));
         return;
       }
 
-      this.serialPort.write(`${data}\n`, (error) => {
+      this.serialPort.write(data + '\n', (error: Error | null) => {
         if (error) {
           console.error('Failed to send data:', error);
           reject(error);
@@ -77,7 +77,7 @@ class ArduinoService extends EventEmitter {
   }
 
   public getCurrentPort(): string | null {
-    return this.serialPort?.path ?? null;
+    return this.PORT_PATH;
   }
 }
 
