@@ -3,10 +3,13 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { checkId } from './communication/api';
 import { WebSerialCommunication } from './communication/web_serial_com';
+import { RefillPremixButton, RefillPostmixButton } from './menu/refill_modal'
 
 export const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [showRefillPostmix, setShowRefillPostmix] = useState(false);
+  const [showRefillPremix, setShowRefillPremix] = useState(false);
 
   useEffect(() => {
     // Connect to WebSocket server
@@ -25,6 +28,12 @@ export const LoginPage: React.FC = () => {
           if (result.exists) {
             sessionStorage.setItem('userId', rfidData);
             navigate('/main');
+          } else if (rfidData === "refill faxe") {
+            // Trigger RefillPostmixButton modal
+            setShowRefillPostmix(true);
+          } else if (rfidData === "refill mix") {
+            // Trigger RefillPremixButton modal
+            setShowRefillPremix(true);
           } else {
             setError('ID ikke genkendt');
             setTimeout(() => setError(''), 3000);
@@ -59,6 +68,8 @@ export const LoginPage: React.FC = () => {
           <WebSerialCommunication />
           </div>
         )}
+        {showRefillPostmix && <RefillPostmixButton />}
+        {showRefillPremix && <RefillPremixButton />}
       </div>
     </div>
   );
