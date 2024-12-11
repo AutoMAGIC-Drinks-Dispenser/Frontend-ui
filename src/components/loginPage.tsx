@@ -2,16 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { checkId } from './communication/api';
 import { WebSerialCommunication } from './communication/web_serial_com';
-import { RefillPremixModal, RefillPostmixModal } from './menu/refill_modal';
 
 export const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const [showRefillPostmix, setShowRefillPostmix] = useState(false);
-  const [showRefillPremix, setShowRefillPremix] = useState(false);
 
   useEffect(() => {
-    // Connect to WebSocket server
     const ws = new WebSocket('ws://localhost:8080');
     ws.onmessage = async (event) => {
       try {
@@ -26,12 +22,6 @@ export const LoginPage: React.FC = () => {
           if (result.exists) {
             sessionStorage.setItem('userId', rfidData);
             navigate('/main');
-          } else if (rfidData === "refill faxe") {
-            // Trigger RefillPostmixModal
-            setShowRefillPostmix(true);
-          } else if (rfidData === "refill mix") {
-            // Trigger RefillPremixModal
-            setShowRefillPremix(true);
           } else {
             setError('ID ikke genkendt');
             setTimeout(() => setError(''), 3000);
@@ -42,11 +32,12 @@ export const LoginPage: React.FC = () => {
         setTimeout(() => setError(''), 3000);
       }
     };
+
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
       setError('Forbindelsesfejl');
     };
-    // Cleanup on unmount
+
     return () => {
       ws.close();
     };
@@ -59,16 +50,6 @@ export const LoginPage: React.FC = () => {
         <p className="text-lg mb-4">* Scan RFID chip *</p>
         {error && <div className="mb-4 text-red-500">{error}</div>}
         <WebSerialCommunication />
-
-        {/* Modals */}
-        <RefillPostmixModal
-          showModal={showRefillPostmix}
-          onClose={() => setShowRefillPostmix(false)}
-        />
-        <RefillPremixModal
-          showModal={showRefillPremix}
-          onClose={() => setShowRefillPremix(false)}
-        />
       </div>
     </div>
   );
