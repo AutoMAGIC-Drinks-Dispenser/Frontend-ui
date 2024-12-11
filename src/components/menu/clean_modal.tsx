@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { sendDataToArduino } from "./../communication/web_serial_com";
+
 
 interface TimerPopupProps {
   onClose: () => void;
@@ -44,20 +46,42 @@ export const CleaningPopupModal: React.FC<TimerPopupProps> = ({
 };
 
 export const CleaningButton: React.FC = () => {
-  const [isPopupOpen, setPopupOpen] = useState(false);
+  const [showPopup, setShowPopup] = useState<"clean" | null>(null);
 
-  const handleOpenPopup = () => setPopupOpen(true);
-  const handleClosePopup = () => setPopupOpen(false);
+  const handleCleanClick = () => {
+    setShowPopup("clean");
+  };
+
+  const handleClosePopup = () => {
+    setShowPopup(null);
+  };
+
+  const handleStart = async () => {
+    if (showPopup) {
+      try {
+        sendDataToArduino(showPopup);
+        setShowPopup(null);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (showPopup) {
+      handleStart();
+    }
+  }, [showPopup]);
 
   return (
     <div>
       <button
         className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32 h-12"
-        onClick={handleOpenPopup}
+        onClick={handleCleanClick}
       >
         Rengør system
       </button>
-      {isPopupOpen && (
+      {showPopup && (
         <CleaningPopupModal onClose={handleClosePopup} duration={30} />
       )}
     </div>
