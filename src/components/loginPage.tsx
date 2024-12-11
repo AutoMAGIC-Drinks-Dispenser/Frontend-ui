@@ -48,7 +48,6 @@ export const LoginPage: React.FC = () => {
       <div className="p-8 bg-white rounded-lg shadow-md text-center">
         <h1 className="text-2xl font-bold mb-6">Log ind</h1>
         <p className="text-lg mb-4">* Scan RFID chip *</p>
-        {error && <div className="mb-4 text-red-500">{error}</div>}
         <WebSerialCommunication />
       </div>
     </div>
