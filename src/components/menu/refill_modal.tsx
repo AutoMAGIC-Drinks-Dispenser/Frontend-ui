@@ -1,11 +1,25 @@
-import  { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-export const RefillPremixButton = () => {
-  const [showModal, setShowModal] = useState(false);
+interface RefillButtonProps {
+  initialShowModal?: boolean;
+  onComplete?: () => void;
+}
+
+export const RefillPremixButton: React.FC<RefillButtonProps> = ({ 
+  initialShowModal = false,
+  onComplete
+}) => {
+  const [showModal, setShowModal] = useState(initialShowModal);
+
+  useEffect(() => {
+    setShowModal(initialShowModal);
+  }, [initialShowModal]);
 
   const handleConfirm = () => {
-    // Add your confirmation logic here
     setShowModal(false);
+    if (onComplete) {
+      onComplete();
+    }
   };
 
   return (
@@ -16,9 +30,9 @@ export const RefillPremixButton = () => {
       >
         Påfyld Spejlægmix
       </button>
-
+      
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-8 rounded-md shadow-lg text-center">
             <h2 className="text-2xl font-bold mb-4">Bekræft påfyldning</h2>
             <p className="text-gray-700 mb-6">
@@ -37,12 +51,21 @@ export const RefillPremixButton = () => {
   );
 };
 
-export const RefillPostmixButton = () => {
-  const [showModal, setShowModal] = useState(false);
+export const RefillPostmixButton: React.FC<RefillButtonProps> = ({ 
+  initialShowModal = false,
+  onComplete
+}) => {
+  const [showModal, setShowModal] = useState(initialShowModal);
+
+  useEffect(() => {
+    setShowModal(initialShowModal);
+  }, [initialShowModal]);
 
   const handleConfirm = () => {
-    // Add your confirmation logic here
     setShowModal(false);
+    if (onComplete) {
+      onComplete();
+    }
   };
 
   return (
@@ -53,9 +76,9 @@ export const RefillPostmixButton = () => {
       >
         Påfyld Faxekondi
       </button>
-
+      
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-8 rounded-md shadow-lg text-center">
             <h2 className="text-2xl font-bold mb-4">Bekræft påfyldning</h2>
             <p className="text-gray-700 mb-6">
