@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { SpejlaegPopupModal } from "./dispense_button_modal";
 import { sendDataToArduino } from "./communication/web_serial_com";
-import { incrementAlltime } from "./communication/api"; // Add this import
+import { incrementAlltime } from "./communication/api"; 
 
 export const SpejlaegButtonComponent: React.FC = () => {
   const [showPopup, setShowPopup] = useState<"single" | "double" | null>(null);
@@ -40,7 +40,7 @@ export const SpejlaegButtonComponent: React.FC = () => {
         setShowPopup(null);
         setError("");
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Der skete en fejl');
+        setError(err instanceof Error ? err.message : 'Der sket en fejl');
       }
     }
   };

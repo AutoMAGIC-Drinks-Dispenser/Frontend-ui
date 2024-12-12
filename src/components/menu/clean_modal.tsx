@@ -1,64 +1,76 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { sendDataToArduino } from "./../communication/web_serial_com";
+import { PopupProps } from "../dispense_button_modal";
 
-interface TimerPopupProps {
-  onClose: () => void;
-  duration: number; // Timer duration in seconds
-}
 
-export const CleaningPopupModal: React.FC<TimerPopupProps> = ({
+export const CleaningPopupModal: React.FC<PopupProps> = ({
   onClose,
-  duration,
+  onStart,
 }) => {
-  const [timeLeft, setTimeLeft] = useState(duration);
-
-  useEffect(() => {
-    if (timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer); // Cleanup on unmount or new timer start
-    } else {
-      onClose(); // Close popup when timer reaches 0
-    }
-  }, [timeLeft, onClose]);
-
-  const progress = ((duration - timeLeft) / duration) * 100;
-
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white p-8 rounded-md shadow-lg text-center">
-        <h2 className="text-2xl font-bold mb-4">Skyller system</h2>
-        <p className="text-gray-700 mb-6">
-          Rengøring er i gang, vent venligst...
-        </p>
-        <div className="text-xl font-bold text-blue-500 mb-4">
-          Tid tilbage: {timeLeft} sekunder
+        <h2 className="text-2xl font-bold mb-4">Rengør system</h2>
+        <div className="flex justify-around mt-8">
+          <button
+            onClick={onStart}
+            className="bg-blue-400 text-white px-6 py-2 rounded-md hover:bg-blue-500 focus:outline-none p-2"
+          >
+            Start
+          </button>
+          <button
+            onClick={onClose}
+            className="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-700 focus:outline-none p-2"
+          >
+            Annullér
+          </button>
         </div>
-        <div className="w-full bg-gray-300 rounded-full h-4">
-          <div
-            className="bg-blue-400 h-4 rounded-full"
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
+        <h3 className="mt-3">Denne handling skyller systemet igennem i 5 sekunder</h3>
+        <h4>Sørg for at pumpen er tilsluttet en vand beholder</h4>
       </div>
     </div>
   );
 };
 
 export const CleaningButton: React.FC = () => {
-  const [isPopupOpen, setPopupOpen] = useState(false);
+  const [showPopup, setShowPopup] = useState<"clean" | null>(null);
+  const [error, setError] = useState<string>("");
 
-  const handleOpenPopup = () => setPopupOpen(true);
-  const handleClosePopup = () => setPopupOpen(false);
+  const handleCleanClick = () => {
+    setShowPopup("clean");
+  };
+
+  const handleClosePopup = () => {
+    setShowPopup(null);
+    setError("");
+  };
+
+  const handleStart = async () => {
+    if (showPopup) {
+      try {
+        sendDataToArduino(showPopup);
+        setShowPopup(null);
+        setError("");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Der sket en fejl');
+      }
+    }
+  };
 
   return (
     <div>
       <button
         className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32 h-12"
-        onClick={handleOpenPopup}
+        onClick={handleCleanClick}
       >
-        Rengør system
+        Rengør System
       </button>
-      {isPopupOpen && (
-        <CleaningPopupModal onClose={handleClosePopup} duration={30} />
+      {showPopup && (
+        <CleaningPopupModal 
+          onClose={handleClosePopup} 
+          onStart={handleStart} 
+          err={error}
+        />
       )}
     </div>
   );
