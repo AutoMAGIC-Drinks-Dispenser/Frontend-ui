@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { sendDataToArduino } from "./../communication/web_serial_com";
 import { PopupProps } from "../dispense_button_modal";
 
@@ -10,7 +10,7 @@ export const CleaningPopupModal: React.FC<PopupProps> = ({
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white p-8 rounded-md shadow-lg text-center">
-        <h2 className="text-2xl font-bold mb-4">Bekræft Rengøring</h2>
+        <h2 className="text-2xl font-bold mb-4">Rengør system</h2>
         <div className="flex justify-around mt-8">
           <button
             onClick={onStart}
@@ -32,6 +32,7 @@ export const CleaningPopupModal: React.FC<PopupProps> = ({
 
 export const CleaningButton: React.FC = () => {
   const [showPopup, setShowPopup] = useState<"clean" | null>(null);
+  const [error, setError] = useState<string>("");
 
   const handleCleanClick = () => {
     setShowPopup("clean");
@@ -39,6 +40,7 @@ export const CleaningButton: React.FC = () => {
 
   const handleClosePopup = () => {
     setShowPopup(null);
+    setError("");
   };
 
   const handleStart = async () => {
@@ -46,31 +48,25 @@ export const CleaningButton: React.FC = () => {
       try {
         sendDataToArduino(showPopup);
         setShowPopup(null);
-      } catch (error) {
-        console.error(error);
+        setError("");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Der sket en fejl');
       }
     }
   };
 
-  useEffect(() => {
-    if (showPopup) {
-      handleStart();
-    }
-  }, [showPopup]);
-
   return (
     <div>
       <button
-        className="bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32 h-12"
+        className="flex items-center justify-center py-20 bg-zinc-800 text-xs text-white px-6 py-2 rounded-md hover:bg-zinc-950 focus:outline-none w-32 h-12"
         onClick={handleCleanClick}
       >
-        Rengør system
       </button>
       {showPopup && (
         <CleaningPopupModal 
           onClose={handleClosePopup} 
           onStart={handleStart} 
-          err={""}
+          err={error}
         />
       )}
     </div>
