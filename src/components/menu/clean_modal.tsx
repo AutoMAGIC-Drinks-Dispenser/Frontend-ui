@@ -14,17 +14,18 @@ export const CleaningPopupModal: React.FC<PopupProps> = ({
         <div className="flex justify-around mt-8">
           <button
             onClick={onStart}
-            className="bg-blue-400 text-white px-6 py-2 rounded-md hover:bg-blue-500 focus:outline-none"
+            className="bg-blue-400 text-white px-6 py-2 rounded-md hover:bg-blue-500 focus:outline-none p-2"
           >
             Start
           </button>
           <button
             onClick={onClose}
-            className="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-700 focus:outline-none"
+            className="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-700 focus:outline-none p-2"
           >
             Annullér
           </button>
         </div>
+        <h3>Denne handling skyller systemet igennem, sørg for at pumpen er tilsluttet en vand beholder</h3>
       </div>
     </div>
   );
