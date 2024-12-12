@@ -1,8 +1,5 @@
-
 import { AddUser } from "./add_user";
 import { CleaningButton } from "./clean_modal";
-
-
 
 export const ExtraMenu: React.FC = () => {
   return (
