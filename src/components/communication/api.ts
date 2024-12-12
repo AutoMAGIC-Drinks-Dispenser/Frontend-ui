@@ -32,17 +32,6 @@ interface IncrementResponse {
   newValue: number;
 }
 
-// New Arduino interfaces
-interface ArduinoStatusResponse {
-  connected: boolean;
-  message: string;
-}
-
-interface ArduinoSendResponse {
-  success: boolean;
-  message: string;
-}
-
 const API_BASE_URL = 'http://localhost:3000/api';
 
 // Existing functions
@@ -102,40 +91,4 @@ export async function removeUser(id: number): Promise<RemoveUserResponse> {
     throw new Error(errorData.error || 'Failed to remove user');
   }
   return response.json();
-}
-
-// New Arduino functions
-export async function sendToArduino(data: string): Promise<ArduinoSendResponse> {
-  const response = await fetch(`${API_BASE_URL}/arduino/send`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ data })
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json() as ApiError;
-    throw new Error(errorData.error || 'Failed to send data to Arduino');
-  }
-  return response.json();
-}
-
-export async function getArduinoStatus(): Promise<ArduinoStatusResponse> {
-  const response = await fetch(`${API_BASE_URL}/arduino/status`);
-  
-  if (!response.ok) {
-    const errorData = await response.json() as ApiError;
-    throw new Error(errorData.error || 'Failed to get Arduino status');
-  }
-  return response.json();
-}
-
-// Helper function to check Arduino connection before sending data
-export async function sendToArduinoWithCheck(data: string): Promise<ArduinoSendResponse> {
-  const status = await getArduinoStatus();
-  if (!status.connected) {
-    throw new Error('Arduino is not connected');
-  }
-  return sendToArduino(data);
 }
