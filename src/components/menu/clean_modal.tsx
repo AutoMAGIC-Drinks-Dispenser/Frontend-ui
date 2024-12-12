@@ -25,7 +25,8 @@ export const CleaningPopupModal: React.FC<PopupProps> = ({
             Annullér
           </button>
         </div>
-        <h3>Denne handling skyller systemet igennem, sørg for at pumpen er tilsluttet en vand beholder</h3>
+        <h3 className="mt-3">Denne handling skyller systemet igennem i 5 sekunder</h3>
+        <h4>Sørg for at pumpen er tilsluttet en vand beholder</h4>
       </div>
     </div>
   );
