@@ -1,4 +1,3 @@
-// backend/src/modules/arduino/arduinoRoutes.ts
 import { Router } from 'express';
 import { arduinoService } from './arduinoService';
 

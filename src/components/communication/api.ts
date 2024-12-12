@@ -1,6 +1,3 @@
-// api.ts
-
-// Existing interfaces
 interface User {
   id: number;
   username: string;
