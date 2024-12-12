@@ -1,4 +1,4 @@
-interface PopupProps {
+export interface PopupProps {
   onClose: () => void;
   onStart: () => Promise<void>;
   err: string;
